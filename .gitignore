@@ -1,0 +1,6 @@
+__pycache__/**/*.*
+.vscode/*
+Config/__pycache__
+Config/.pytest_cache
+Config/.vscode
+.gitignore
