@@ -3,7 +3,7 @@
 парсит страницу с расписанием студентов и выбирает href на экселл-файл
 c расписанием
 """
-from typing import Union, Any, Tuple, AnyStr
+from typing import List, Union, Any, Tuple, AnyStr
 import requests
 from bs4 import BeautifulSoup as bs
 from bs4 import Tag
@@ -63,6 +63,11 @@ def get_time_table_list(table_tag: bs) -> list:
     time_table_list = table_tag.find_all('tr')
     return time_table_list
 
+def make_output_json_keys(list_keys:List[Tag]) -> dict[str, list]:
+    list_of_keys = [k.text for k in list_keys.find_all('td')]
+    return {key:[] for key in list_of_keys}
+
+
 def main():
     
     # читать страницу расписания
@@ -81,12 +86,17 @@ def main():
     soup_table_bakalavr, soup_table_magistr = extract_time_tables(parsed_page)
 
     # получить списки из тегов таблиц
-    list_table_bakalavr = get_time_table_list(soup_table_bakalavr)
-    list_table_magistr  = get_time_table_list(soup_table_magistr)
+    list_table_bakalavr:List[Tag] = get_time_table_list(soup_table_bakalavr)
+    list_table_magistr:List[Tag]  = get_time_table_list(soup_table_magistr)
     
-    # преобразовать списки в выходной json
+    # слить 2 списка без первых строк - будет список ссылок на файлы
+    list_values:List[Tag] = list_table_bakalavr[1:] + list_table_magistr[1:]
+    #  список назв. факультетов
+    list_keys:List[Tag] = list_table_bakalavr[0]
     
-    
+    # формировать ключи для выходного json
+    output_json = make_output_json_keys(list_keys)
+    pass
      
     
 
