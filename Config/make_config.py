@@ -65,8 +65,20 @@ def get_time_table_list(table_tag: bs) -> list:
 
 def make_output_json_keys(list_keys:List[Tag]) -> dict[str, list]:
     list_of_keys = [k.text for k in list_keys.find_all('td')]
+    
     return {key:[] for key in list_of_keys}
 
+def make_output_json_values(tr_tags:List[Tag]) -> List[List[str]]:
+    output = []
+    
+    for tr_tag in tr_tags:
+        output.append([a.get('href') for a in tr_tag.find_all('a')])
+    
+    return output
+
+
+def fill_output_json(values:List[str], output:dict[str, list]) -> dict[str, list[str]]: 
+    pass
 
 def main():
     
@@ -96,8 +108,13 @@ def main():
     
     # формировать ключи для выходного json
     output_json = make_output_json_keys(list_keys)
-    pass
-     
+    
+    # формировать значение для выходного json
+    output_json_values = make_output_json_values(list_values)
+    
+    # заполнить json ссылками на файлы с расписанием
+    
+    output_json = fill_output_json(list_values, output_json)
     
 
 if __name__ == '__main__':

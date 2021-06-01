@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup as bs
 from make_config import \
     extract_time_tables, \
     get_time_table_list, \
-    make_output_json_keys
+    make_output_json_keys, \
+    make_output_json_values, \
+    fill_output_json
     
 
 @pytest.fixture
@@ -86,4 +88,41 @@ def test_make_output_json_keys(soup_table_0_row):
         "ФЕМП":[],
         "ФМТП":[]
     }
-    # pass
+
+
+@pytest.fixture
+def soup_table_values():
+    test_html = ["""
+            <tr><td><a href='/file=aaa1.xlsx'>1 курс</a></td>
+            <td><a href='/file=bbb1.xlsx'>1 курс</a></td></tr>
+    """,
+    """
+            <tr><td><a href='/file=aaa2.xlsx'>2 курс</a></td>
+            <td><a href='/file=bbb2.xlsx'>2 курс</a></td></tr>
+    """,
+    """
+            <tr><td><a href='/file=aaa3.xlsx'>3 курс</a></td>
+            <td><a href='/file=bbb3.xlsx'>3 курс</a></td></tr>
+    """]
+    
+    soup = []
+    for i in range(3):
+        test_html[i] = test_html[i].replace('\n','')
+        test_html[i] = test_html[i].replace('  ','')
+        soup.append(bs(test_html[i], features='html.parser'))
+        
+    return soup
+
+def test_make_output_json_values(soup_table_values):
+    result = make_output_json_values(soup_table_values)
+    assert result == [
+        ['/file=aaa1.xlsx', "/file=bbb1.xlsx"],
+        ['/file=aaa2.xlsx', "/file=bbb2.xlsx"],
+        ['/file=aaa3.xlsx', "/file=bbb3.xlsx"]
+    ]
+
+
+
+def test_fill_output_json():
+    keys = ["ФИТ", "ФЕМП", "ФМТП"]
+    # values = 
