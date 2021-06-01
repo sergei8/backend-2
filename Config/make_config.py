@@ -3,9 +3,10 @@
 парсит страницу с расписанием студентов и выбирает href на экселл-файл
 c расписанием
 """
-from typing import Union, Any, Tuple
+from typing import Union, Any, Tuple, AnyStr
 import requests
 from bs4 import BeautifulSoup as bs
+from bs4 import Tag
 
 TIME_TABLE_URL = "https://knute.edu.ua/blog/read/?pid=1038&uk"
 DENNA_FORMA_TABLE_NAME = "ДЕННА ФОРМА НАВЧАННЯ"
@@ -37,16 +38,30 @@ def get_parsed_timetable(html_page) -> Union[bs, None]:
     return parsed_page
     
 def extract_time_tables(parsed_page) -> Tuple[bs, bs]: 
+    
+    def find_time_table_tag(level_name:AnyStr) -> bs:
+        for elem in denna_forma.next_elements :
+            # for each tag do check for eq `level_name`
+            if isinstance(elem, Tag):
+                if elem.text == level_name:
+                    # find first next table
+                    return elem.find_next('table')
+        return ""
+    
     # выделить начало секции расписания денной формы
     denna_forma:bs = parsed_page.find("strong", text=DENNA_FORMA_TABLE_NAME)
     
-    # таблиц бакалавров (через одну в DOM)
-    table_bakalavr:bs = denna_forma.parent.next_sibling.next_sibling
+    # таблиц бакалавров 
+    table_bakalavr:bs = find_time_table_tag("БАКАЛАВР")            
 
     # таблица магистров
-    table_magistr:bs = table_bakalavr.next_sibling.next_sibling
-
+    table_magistr:bs = find_time_table_tag("МАГІСТР")  
+        
     return (table_bakalavr, table_magistr)
+
+def get_time_table_list(table_tag: bs) -> list:
+    time_table_list = table_tag.find_all('tr')
+    return time_table_list
 
 def main():
     
@@ -62,9 +77,17 @@ def main():
         print("ошибка парсинга страницы расписания")
         exit(1)
 
-    # выделить таблицу и загрузить ее в pandas
-    denna_forma = extract_time_tables(parsed_page)
-    # print(denna_forma)
+    # выделить теги таблиц бакалавров и магистров
+    soup_table_bakalavr, soup_table_magistr = extract_time_tables(parsed_page)
+
+    # получить списки из тегов таблиц
+    list_table_bakalavr = get_time_table_list(soup_table_bakalavr)
+    list_table_magistr  = get_time_table_list(soup_table_magistr)
+    
+    # преобразовать списки в выходной json
+    
+    
+     
     
 
 if __name__ == '__main__':
