@@ -7,7 +7,7 @@ from make_config import \
     get_time_table_list, \
     make_output_json_keys, \
     make_output_json_values, \
-    fill_output_json
+    make_final_json
     
 
 @pytest.fixture
@@ -66,7 +66,6 @@ def soup_table():
     soup = bs(test_html, features='html.parser')
 
     return soup
-
 def test_get_time_table_list(soup_table):
     result = get_time_table_list(soup_table)
     assert len(result) > 0 
@@ -79,14 +78,13 @@ def soup_table_0_row():
     soup = bs(test_html, features='html.parser')
 
     return soup
-
 def test_make_output_json_keys(soup_table_0_row):
     result = make_output_json_keys(soup_table_0_row)
     assert isinstance(result, dict) == True
     assert result == {
-        "ФИТ": [],
-        "ФЕМП":[],
-        "ФМТП":[]
+        "ФИТ": None,
+        "ФЕМП":None,
+        "ФМТП":None
     }
 
 
@@ -120,9 +118,19 @@ def test_make_output_json_values(soup_table_values):
         ['/file=aaa2.xlsx', "/file=bbb2.xlsx"],
         ['/file=aaa3.xlsx', "/file=bbb3.xlsx"]
     ]
-
-
-
-def test_fill_output_json():
+    
+def test_make_final_json():
     keys = ["ФИТ", "ФЕМП", "ФМТП"]
-    # values = 
+    values = [
+        ['/file=aaa1.xlsx', "/file=bbb1.xlsx", "/file=ccc1.xlsx"],
+        ['/file=aaa2.xlsx', "/file=bbb2.xlsx", "/file=ccc2.xlsx"],
+        ['/file=aaa3.xlsx', "/file=bbb3.xlsx", "/file=ccc3.xlsx"]
+    ]
+    result = make_final_json(keys, values)
+    assert isinstance(result, dict) == True
+    assert len(result.keys()) == 3
+    assert result == {
+        "ФИТ"  : ['/file=aaa1.xlsx', '/file=aaa2.xlsx', '/file=aaa3.xlsx'],
+        "ФЕМП" : ['/file=bbb1.xlsx', '/file=bbb2.xlsx', '/file=bbb3.xlsx'],
+        "ФМТП" : ['/file=ccc1.xlsx', '/file=ccc2.xlsx', '/file=ccc3.xlsx']
+    }

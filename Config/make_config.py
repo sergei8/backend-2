@@ -5,8 +5,9 @@ c расписанием
 """
 from typing import List, Union, Any, Tuple, AnyStr
 import requests
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup as bs, StopParsing
 from bs4 import Tag
+from collections import OrderedDict
 
 TIME_TABLE_URL = "https://knute.edu.ua/blog/read/?pid=1038&uk"
 DENNA_FORMA_TABLE_NAME = "ДЕННА ФОРМА НАВЧАННЯ"
@@ -63,10 +64,10 @@ def get_time_table_list(table_tag: bs) -> list:
     time_table_list = table_tag.find_all('tr')
     return time_table_list
 
-def make_output_json_keys(list_keys:List[Tag]) -> dict[str, list]:
+def make_output_json_keys(list_keys:list[Tag]) -> dict[str, Any]:
     list_of_keys = [k.text for k in list_keys.find_all('td')]
     
-    return {key:[] for key in list_of_keys}
+    return OrderedDict.fromkeys(list_of_keys)
 
 def make_output_json_values(tr_tags:List[Tag]) -> List[List[str]]:
     output = []
@@ -76,9 +77,12 @@ def make_output_json_values(tr_tags:List[Tag]) -> List[List[str]]:
     
     return output
 
-
-def fill_output_json(values:List[str], output:dict[str, list]) -> dict[str, list[str]]: 
-    pass
+def make_final_json(output: dict[str,Any], values: list[List[str]]) -> dict[str, List[str]]: 
+    
+    # транспонировать массив `values`
+    transposed_values = map(list, zip(*values))
+    
+    return dict(zip(output, transposed_values))
 
 def main():
     
@@ -107,14 +111,14 @@ def main():
     list_keys:List[Tag] = list_table_bakalavr[0]
     
     # формировать ключи для выходного json
-    output_json = make_output_json_keys(list_keys)
+    output_json: dict[str,Any] = make_output_json_keys(list_keys)
     
     # формировать значение для выходного json
-    output_json_values = make_output_json_values(list_values)
+    output_json_values: list[List[str]] = make_output_json_values(list_values)
     
     # заполнить json ссылками на файлы с расписанием
-    
-    output_json = fill_output_json(list_values, output_json)
+    output_json = make_final_json(output_json, output_json_values)
+    pass
     
 
 if __name__ == '__main__':
