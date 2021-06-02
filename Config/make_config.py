@@ -8,9 +8,11 @@ import requests
 from bs4 import BeautifulSoup as bs, StopParsing
 from bs4 import Tag
 from collections import OrderedDict
+import json
 
 TIME_TABLE_URL = "https://knute.edu.ua/blog/read/?pid=1038&uk"
 DENNA_FORMA_TABLE_NAME = "ДЕННА ФОРМА НАВЧАННЯ"
+CONFIG_JSON = "config.json"
 
 def get_timetable_page(url: str):
     """возвращает Respond страницы расписания
@@ -77,20 +79,23 @@ def make_output_json_values(tr_tags:List[Tag]) -> List[List[str]]:
     
     return output
 
-def make_final_json(output: dict[str,Any], values: list[List[str]]) -> dict[str, List[str]]: 
+def make_final_json(output: dict[str,Any], values: list[List[str]]) -> dict[str, List[Any]]: 
     
     # транспонировать массив `values`
     transposed_values = map(list, zip(*values))
     
+    # получить и отдать результатный словарь
     return dict(zip(output, transposed_values))
 
 def main():
     
     # читать страницу расписания
+    print("\nчитаю url...")
     time_table_page = get_timetable_page(TIME_TABLE_URL)
     if not time_table_page:
         print("ошибка чтения url расписания")
         exit(1)
+    print("страница получена...")
     
     # распарсить страницу расписаний
     parsed_page = get_parsed_timetable(time_table_page)
@@ -100,6 +105,7 @@ def main():
 
     # выделить теги таблиц бакалавров и магистров
     soup_table_bakalavr, soup_table_magistr = extract_time_tables(parsed_page)
+    print("парсинг...")
 
     # получить списки из тегов таблиц
     list_table_bakalavr:List[Tag] = get_time_table_list(soup_table_bakalavr)
@@ -107,19 +113,26 @@ def main():
     
     # слить 2 списка без первых строк - будет список ссылок на файлы
     list_values:List[Tag] = list_table_bakalavr[1:] + list_table_magistr[1:]
+    
     #  список назв. факультетов
     list_keys:List[Tag] = list_table_bakalavr[0]
-    
+   
     # формировать ключи для выходного json
-    output_json: dict[str,Any] = make_output_json_keys(list_keys)
+    output_json: dict[str, Any] = make_output_json_keys(list_keys)
+    print(f"{list(output_json.keys())}")
     
     # формировать значение для выходного json
     output_json_values: list[List[str]] = make_output_json_values(list_values)
     
     # заполнить json ссылками на файлы с расписанием
-    output_json = make_final_json(output_json, output_json_values)
-    pass
+    output_json: dict[str, list[str]] = make_final_json(output_json, output_json_values)
     
+    # записать результатный файл
+    with open(CONFIG_JSON, 'w', encoding="utf-8") as output:
+        json.dump(output_json, output, indent=2, ensure_ascii=False)
+    
+    print(f"файл записан\n\n")
+
 
 if __name__ == '__main__':
     main()
