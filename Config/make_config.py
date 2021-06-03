@@ -10,9 +10,11 @@ from bs4 import Tag
 from collections import OrderedDict
 import json
 
-TIME_TABLE_URL = "https://knute.edu.ua/blog/read/?pid=1038&uk"
+import sys
+sys.path.insert(0,'.')
+from config_app import TIME_TABLE_URL, CONFIG_JSON
+
 DENNA_FORMA_TABLE_NAME = "ДЕННА ФОРМА НАВЧАННЯ"
-CONFIG_JSON = "config.json"
 
 def get_timetable_page(url: str):
     """возвращает Respond страницы расписания

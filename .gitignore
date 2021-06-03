@@ -4,3 +4,5 @@ Config/__pycache__
 Config/.pytest_cache
 Config/.vscode
 .gitignore
+Groups/__pycache__
+Groups/.ipynb_checkpoints
