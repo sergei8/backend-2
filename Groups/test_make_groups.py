@@ -1,14 +1,56 @@
 import pytest
 import pandas as pd
-from make_groups import get_groups_list, get_sheet_names
+import numpy as np
+from make_groups import get_groups_list, get_sheet_names, get_group_list
 
-def test_get_sheet_names():
-    result = get_sheet_names(["Розклад", "Лист", "1-10 гр.розклад", "Начитка"])
-    assert result == ["Розклад", "1-10 гр.розклад"]
-    result = get_sheet_names([])
-    assert result == []
-    result = get_sheet_names(["Лист"])
-    assert result == []
-    result = get_sheet_names(["Розклад 5-14,23гр "])
-    assert result == ["Розклад 5-14,23гр "]
+@pytest.fixture
+def dfs():
+    d_dfs = \
+    {
+        "Розклад" : pd.DataFrame(
+            [
+                [None, None, None, None],
+                ["Номер\nтижня", "День\nтижня", "Пара\n", None],
+                [None, None, None, None]
+             ]
+        ),
+        "Начитка" : pd.DataFrame(
+            [
+                [None, None, None, None],
+                [None, None, None, None]
+             ]
+        ),
+        "з 08.02 Розклад" : pd.DataFrame(
+            [
+                [None, None, None, None],
+                ["Номер\nтижня", "День\nтижня", "Пара\n", None],
+                [None, None, None, None]
+             ]
+        )
+    }
     
+    return d_dfs    
+def test_get_sheet_names(dfs):
+    result = get_sheet_names(dfs)
+    assert result == ["Розклад", "з 08.02 Розклад"]
+    result = get_sheet_names({"Лист": pd.DataFrame([])})
+    assert result == []
+
+@pytest.fixture
+def time_table():
+    df = pd.DataFrame(
+        [
+            [None, None, None, None, None],
+            ["Номер\nтижня", "День\nтижня", "Пара\n", "Online", None],
+            [None, None, None, None],
+            ["Номер\nтижня", "День\nтижня", "Пара\n", "1 група", "2 група"],
+            [None, None, None, None, None]
+        ]
+    )
+    return df
+def test_get_group_list(time_table):
+    expected = ["1", "2"]
+    result = get_group_list(time_table)
+    assert expected == result
+    result = get_group_list(pd.DataFrame([]))
+    assert result == []

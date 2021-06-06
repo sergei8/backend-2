@@ -10,3 +10,8 @@ KNTEU_URL = "https://knute.edu.ua"
 NAME_OF_WS = [
     "розклад"
 ]
+
+# название колонки 
+WEEK_NOMER = "Номер\nтижня"
+DAY_NAME = "День\nтижня"
+GROUP = "група"
