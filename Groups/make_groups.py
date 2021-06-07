@@ -20,6 +20,12 @@ from typing import Any
 import re
 
 def make_groups_list(href: str) -> list[str]:
+    """ по href чытает excel в датафрейм
+    вызывает 
+        - построитель списка листов с реальным расписанием
+        - для выбранных листов вызывает постоитель списка групп
+    возвращает список групп
+    """
         
     # прочитать xls в словарь датафреймов
     url = KNTEU_URL + href
@@ -39,24 +45,33 @@ def make_groups_list(href: str) -> list[str]:
     return group_list
 
 def get_group_list(time_table: DataFrame) -> list[str]:
+    """ принимает датафрейм, ищет в нем строку с паттерном GRUPA
+    если найден, то проходит по этой строке и выбирает все номера групп
+    возвращает список номеров групп
+    """
     
     group_list: list[str] = []
-    for (_, row) in time_table.iterrows():
-        if GROUP in ''.join([x for x in list(row) if type(x) == str]):
+    for _, row in time_table.iterrows():
+        # if GROUP in ''.join([x for x in list(row) if type(x) == str]):
+        if re.search(GROUP, ''.join([x for x in list(row) if type(x) == str])):
             group_list += [x.split()[0] for x in list(row) if x and GROUP in x]
 
     return group_list
 
 def get_sheet_names(dfs:dict[str, Any]) -> list[str]:
+    """ принимает славарь датафреймов
+    для каждого датафрейма ищет паттерн WEEK_NOMER ('Номер????тижня')
+    ято является признаком реального расписания и  добавляет название
+    этого дадафрейма в список листов с расписанием
+    """
     
     output = []
     sheet_names = dfs.keys()
     for name in sheet_names:
-        if len(dfs[name]) == 0:
-            continue
-        if WEEK_NOMER in dfs[name][0].values:
-            output.append(name)
-    
+        for _, row in dfs[name].iterrows():
+            if any ([lambda x: re.match(WEEK_NOMER, x) for x in list(row) if x is not None]):
+                output.append(name)
+                
     return output
 
 def main():

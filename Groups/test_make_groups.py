@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from make_groups import get_groups_list, get_sheet_names, get_group_list
+from make_groups import get_sheet_names, get_group_list
 
 @pytest.fixture
 def dfs():
@@ -23,7 +23,7 @@ def dfs():
         "з 08.02 Розклад" : pd.DataFrame(
             [
                 [None, None, None, None],
-                ["Номер\nтижня", "День\nтижня", "Пара\n", None],
+                ["Номер   тижня", "День\nтижня", "Пара\n", None],
                 [None, None, None, None]
              ]
         )

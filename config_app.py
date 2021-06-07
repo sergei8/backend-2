@@ -12,6 +12,6 @@ NAME_OF_WS = [
 ]
 
 # название колонки 
-WEEK_NOMER = "Номер\nтижня"
+WEEK_NOMER = r"Номер\wтижня"
 DAY_NAME = "День\nтижня"
-GROUP = "група"
+GROUP = r"група"
