@@ -7,11 +7,11 @@
             }
         }
 """
-# mypy: ignore_missing_imports = True
 
 import sys
 sys.path.insert(0,'.')
-from config_app import NAME_OF_WS, CONFIG_JSON, KNTEU_URL, WEEK_NOMER, GROUP, DAY_NAME
+from config_app import NAME_OF_WS, CONFIG_JSON, KNTEU_URL, \
+    WEEK_NOMER, GROUP, DAY_NAME, GROUPS_JSON
 
 from pandas.core.frame import DataFrame
 import pandas as pd
@@ -37,42 +37,49 @@ def make_groups_list(href: str) -> list[str]:
     # для каждого актуального листа выбрать в group_list группы
     group_list: list[str] = []
     for sheet_name in sheet_names_list:
-        group_list += get_group_list(time_tables_dict[sheet_name])
+        group_list += get_group_list(sheet_name, time_tables_dict[sheet_name])
         
     # пропустить group_list через set для устранения дублей
     group_list = list(set(group_list))
     
-    return group_list
+    return sorted(group_list)
 
-def get_group_list(time_table: DataFrame) -> list[str]:
-    """ принимает датафрейм, ищет в нем строку с паттерном GRUPA
+def get_group_list(sheet_name: str, time_table: DataFrame) -> list[str]:
+    """ принимает датафрейм и имя excel-листа, ищет в нем строку с паттерном GRUPA
     если найден, то проходит по этой строке и выбирает все номера групп
     возвращает список номеров групп
     """
     
-    group_list: list[str] = []
     for _, row in time_table.iterrows():
-        # if GROUP in ''.join([x for x in list(row) if type(x) == str]):
-        if re.search(GROUP, ''.join([x for x in list(row) if type(x) == str])):
-            group_list += [x.split()[0] for x in list(row) if x and GROUP in x]
-
-    return group_list
+        try:
+            if re.search(GROUP, ''.join([x for x in list(row) if type(x) == str])):
+                return [x.split()[0] for x in list(row) if not pd.isna(x) and GROUP in x]
+        except:
+                print(f"ошибка парсинга [{sheet_name}] : get_group_list")
+                continue
+        
+    return []
 
 def get_sheet_names(dfs:dict[str, Any]) -> list[str]:
     """ принимает славарь датафреймов
-    для каждого датафрейма ищет паттерн WEEK_NOMER ('Номер????тижня')
-    ято является признаком реального расписания и  добавляет название
+    для каждого датафрейма ищет паттерн WEEK_NOMER (см. config_app)
+    что является признаком реального расписания и  добавляет название
     этого дадафрейма в список листов с расписанием
     """
     
-    output = []
+    output:list[str] = []
     sheet_names = dfs.keys()
     for name in sheet_names:
-        for _, row in dfs[name].iterrows():
-            if any ([lambda x: re.match(WEEK_NOMER, x) for x in list(row) if x is not None]):
-                output.append(name)
-                
+        for _, row_as_serial in dfs[name].iterrows():
+            try:
+                if any([x for x in row_as_serial.str.match(WEEK_NOMER) if not pd.isna(x)]):
+                    output.append(name)
+                    break
+            except:
+                print(f"ошибка парсинга [{name}] : get_sheet_names")
+                continue
     return output
+
 
 def main():
     
@@ -83,8 +90,8 @@ def main():
         print ("Ошибка при чтении config.json")
         exit (1)
     
-    groups: dict[str, dict[str, list[str]]] = {}
     # цикл прохода по config_file и формирование выходного json
+    groups: dict[str, dict[str, list[str]]] = {}
     for fac in config:
         print(fac)
         groups[fac] = {}
@@ -95,8 +102,9 @@ def main():
 
         print('\n')
             
-        
-
+    # писать выходной json
+    with open(GROUPS_JSON, 'w') as groups_file:
+        json.dump(groups, groups_file,ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     main()
