@@ -12,9 +12,11 @@ NAME_OF_WS = [
     "розклад"
 ]
 
-# название колонки 
+# паттерны для поиска
 WEEK_NOMER = r"Перший"
 # WEEK_NOMER = r"Перший\W+тиждень"
 # WEEK_NOMER = r"Номер\W+тижня"
 DAY_NAME = "День\nтижня"
 GROUP = r"група"
+KAFEDRA = "Кафедра"
+FACULTET = "Факультет"

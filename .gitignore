@@ -6,3 +6,4 @@ Config/.vscode
 .gitignore
 Groups/__pycache__
 Groups/.ipynb_checkpoints
+Details/__pycache__
