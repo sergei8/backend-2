@@ -1,19 +1,20 @@
+# from Details.constants import TEACHER_PAGE
 import pytest
 
 from bs4 import BeautifulSoup as bs
-from make_details import Facultet, Department
-from make_details import make_fac_list, make_dep_list
+from make_details import Facultet, Department, Teacher
+from make_details import  \
+    make_fac_list, make_dep_list, \
+    make_teacher_list, get_vikl_sklad_href
 
-import sys
-sys.path.insert(0, '.')
-from constants import MENU, MENU_1_FAC
+# import sys
+# sys.path.insert(0, '.')
+from Details.constants import MENU, MENU_1_FAC, DEP_PAGE, TEACHER_PAGE
 
 
 @pytest.fixture
 def menu():
     return bs(MENU, features='html.parser')
-
-
 def test_make_fac_list(menu):
     result = make_fac_list(menu)
     expected = [
@@ -33,8 +34,6 @@ def test_make_fac_list(menu):
 def menu_1_fac():
     menu = bs(MENU_1_FAC, features='html.parser')
     return menu
-
-
 def test_make_dep_list(menu_1_fac):
     fac_name = "Факультет міжнародної торгівлі та права"
     result = make_dep_list(fac_name, menu_1_fac)
@@ -53,4 +52,42 @@ def test_make_dep_list(menu_1_fac):
             філософії, соціології та політології""", "/blog/read?n=Department filosofsmbkikh ta socialmbnikh nauk&uk")
          ]
     
+    assert result == expected
+
+
+@pytest.fixture
+def dep_page():
+    return bs(DEP_PAGE, features='html.parser')
+def test_get_vikl_sklad_page(dep_page):
+    
+    result = get_vikl_sklad_href(dep_page)
+    expected = "/blog/read/?pid=41465&uk"
+    assert result == expected
+    
+    result = get_vikl_sklad_href(bs("<body></body>", features="html.parser"))
+    expected = ''
+    assert result == expected
+
+@pytest.fixture
+def teacher_page():
+    return bs(TEACHER_PAGE, features="html.parser")
+def test_make_teacher_list(teacher_page):
+    
+    class T(Teacher):
+        def __eq__(self, o: object) -> bool:
+            if self.first_name == o.first_name and \
+               self.last_name == o.last_name and  \
+               self.middle_name == o.middle_name and \
+               self.picture_url == o.picture_url:
+                   return True
+            else:
+                return False
+    
+    expected = [
+        T("ДУГІНЕЦЬ   ГАННА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG"),
+        T("ОНИЩЕНКО  \nВОЛОДИМИР ПИЛИПОВИЧ", "file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
+        T("КОРЖ   МАРИНА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
+        T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
+    ]     
+    result = make_teacher_list(teacher_page)
     assert result == expected

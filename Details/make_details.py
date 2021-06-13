@@ -4,8 +4,10 @@
     дописывает эти сведения в файл `time-table.json`
 """
 import sys
+
+import bs4
 sys.path.insert(0, '.')
-from config_app import KNTEU_URL, KAFEDRA, FACULTET
+from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD
 from helpers import clean_string
 
 from typing import Any, List
@@ -39,14 +41,17 @@ class Department:
 class Teacher:
     """ класс для преподавателя """
 
-    def __init__(self, name: str, picture: str = ''):
+    def __init__(self, name: str, picture_url: str = ''):
         self.last_name = name.split(' ')[0].strip()       # Фамілія
         self.first_name = name.split(' ')[1].strip()       # Имя
         self.middle_name = name.split(' ')[2].strip()       # Отчество
-        self.picture = picture                              # url фотки
+        self.picture_url = picture_url                          # url фотки
 
 
 def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
+    """парсит soup-меню и возвращает список инстансов 
+    фак-тов с названиями и href
+    """
 
     # выделить теги названий факультетов в список
     fac_tags = fac_dep_menu.find_all('span', {'class': 'prev-link'})
@@ -64,6 +69,10 @@ def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
 
 
 def make_dep_list(fac_name: str, menu: bs) -> List[Department]:
+    """получает название фак-та, ищет его в soup-меню 
+    и парсит все кафедры фак-та и их href
+    возвращает список инстансов кафедр
+    """
 
     dep_list: List[Department] = []
 
@@ -101,6 +110,22 @@ def make_dep_list(fac_name: str, menu: bs) -> List[Department]:
     return dep_list
 
 
+def make_teacher_list(dep_link: str) -> List[Teacher]:
+
+    return []
+
+
+def get_vikl_sklad_href(dep_page: bs) -> str:
+    """ищет на странице кафедры ссылку на `Викладацький склад`
+    и возвращает ее или `` если не найдена
+    """
+    a_tag = dep_page.find('a', text=SKLAD)
+    if a_tag != None:
+        return a_tag.attrs["href"]
+
+    return ''
+
+
 def main() -> int:
 
     # открыть главную страницу
@@ -115,18 +140,19 @@ def main() -> int:
     # выделить `body`-контент
     main_page_body = soup_main_page.body
     # выделить контент главного меню
-    menues = main_page_body.find_all('ul', {"class": "dropdown-menu"})
+    menues: List[bs] = main_page_body.find_all('ul', {"class": "dropdown-menu"})
     # выделить выпадающее меню `факультеты и кафедры` (2-е)
-    facs_deps_menu = menues[1]
+    facs_deps_menu:bs = menues[1]
 
     # построить список инстансов факультетов
     facs_list: List[Facultet] = make_fac_list(facs_deps_menu)
 
-    # формирование списков преподавателей по кафедрам
+    # построить список инстансов кафедр для каждоо фак-та
     for fac in facs_list:
-        # строим список кафедр факультета `fac`
         fac.deps = make_dep_list(fac.name, facs_deps_menu)
-        # добавляем список кафедр в инстанс факультета
+        
+    # построить список инстансов преподавателей для каждой кафедры
+    
 
     return 0
 
