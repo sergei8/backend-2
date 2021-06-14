@@ -1,15 +1,14 @@
-# from Details.constants import TEACHER_PAGE
 import pytest
 
 from bs4 import BeautifulSoup as bs
 from make_details import Facultet, Department, Teacher
 from make_details import  \
     make_fac_list, make_dep_list, \
-    make_teacher_list, get_vikl_sklad_href
+    make_teacher_list, get_vikl_sklad_href, \
+    extract_teacher_info
 
-# import sys
-# sys.path.insert(0, '.')
-from Details.constants import MENU, MENU_1_FAC, DEP_PAGE, TEACHER_PAGE
+from constants import MENU, MENU_1_FAC, DEP_PAGE, \
+    TEACHER_PAGE, TEACHER_TD
 
 
 @pytest.fixture
@@ -84,10 +83,22 @@ def test_make_teacher_list(teacher_page):
                 return False
     
     expected = [
-        T("ДУГІНЕЦЬ   ГАННА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG"),
-        T("ОНИЩЕНКО  \nВОЛОДИМИР ПИЛИПОВИЧ", "file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
-        T("КОРЖ   МАРИНА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
+        T("ДУГІНЕЦЬ ГАННА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG"),
+        T("ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ", "file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
+        T("КОРЖ МАРИНА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
         T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
     ]     
     result = make_teacher_list(teacher_page)
+    assert result == expected
+
+@pytest.fixture
+def teacher_td():
+    return bs(TEACHER_TD, features="html.parser")
+
+def test_extract_teacher_info(teacher_td):
+    result = extract_teacher_info(teacher_td)
+    expected = (
+        "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
+        "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
+    )
     assert result == expected

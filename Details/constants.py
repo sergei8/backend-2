@@ -67,8 +67,7 @@ TEACHER_PAGE = """
 <tbody>
 <tr>
 <td style="width: 350px; vertical-align: top;">
-<p><img alt="" src="/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG" style="line-height: 20.8px; float: left; width: 170px; height: 173px; margin-left: 10px; margin-right: 10px;"><a href="https://knute.edu.ua/blog/read/?pid=41393&amp;uk"><span style="color:#0000FF;"><strong>ДУГІНЕЦЬ
-ГАННА ВОЛОДИМИРІВНА</strong></span></a></p>
+<p><img alt="" src="/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG" style="line-height: 20.8px; float: left; width: 170px; height: 173px; margin-left: 10px; margin-right: 10px;"><a href="https://knute.edu.ua/blog/read/?pid=41393&amp;uk"><span style="color:#0000FF;"><strong>ДУГІНЕЦЬ ГАННА ВОЛОДИМИРІВНА</strong></span></a></p>
 <p><strong>доктор економічних наук,
 професор,&nbsp;</strong><strong>завідувач кафедри світової
 економіки</strong></p>
@@ -140,4 +139,12 @@ TEACHER_PAGE = """
 </tr>
 </tbody>
 </table>
+"""
+
+TEACHER_TD = """
+<td style="width: 350px; vertical-align: top;">
+<p><img alt="" src="/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg" style="text-align: justify; line-height: 20.8px; float: left; width: 170px; height: 170px; margin-left: 10px; margin-right: 10px;"><a href="https://knute.edu.ua/blog/read/?pid=41432&amp;uk"><span style="color:#0000FF;"><strong>ОНИЩЕНКО
+ВОЛОДИМИР ПИЛИПОВИЧ</strong></span></a></p>
+<p><strong>доктор економічних наук, професор</strong></p>
+</td>
 """

@@ -10,7 +10,7 @@ sys.path.insert(0, '.')
 from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD
 from helpers import clean_string
 
-from typing import Any, List
+from typing import Any, List, Tuple
 from requests.api import options
 
 
@@ -110,20 +110,53 @@ def make_dep_list(fac_name: str, menu: bs) -> List[Department]:
     return dep_list
 
 
-def make_teacher_list(dep_link: str) -> List[Teacher]:
+def make_teacher_list(vikl_page: str) -> List[Teacher]:
+    """возвращает список инстансов преподавателей
+    полученный парсингом soup vikl_page
+    """
+    # преподаватели находятся в таблице после a-тега "Викладацький склад"
+    if vikl_page.find('a', text=SKLAD):
+        teacher_table_tag: bs = vikl_page.find(
+            'a', text=SKLAD).find_next('table')
+    else:
+        return []
 
-    return []
+    # получить список всех td-тегов из таблицы
+    td_tags_list: List[bs] = teacher_table_tag.find_all('td')
+
+    # формируем выходной список проходя по всем ячейкам таблицы
+    teacher_list: List[Teacher] = []
+    for td_tag in td_tags_list:
+        name, picture_url = extract_teacher_info(td_tag)
+        teacher_list.append(Teacher(name, picture_url))
+
+    return teacher_list
 
 
 def get_vikl_sklad_href(dep_page: bs) -> str:
     """ищет на странице кафедры ссылку на `Викладацький склад`
-    и возвращает ее или `` если не найдена
+    и возвращает ее или `` если не найдено
     """
     a_tag = dep_page.find('a', text=SKLAD)
     if a_tag != None:
         return a_tag.attrs["href"]
 
     return ''
+
+
+def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
+    """возвращает из ячейки таблицы имя и линк на фото препода
+    """
+    # поиск имени в a-теге
+    # TODO: обработать ситуацию когда `a` не найден (ячейка без препода)
+    name: str = td_tag.find('a').text
+    name = ' '.join(name.split())
+    
+    # поиск url 
+    url: str = td_tag.find('img')["src"]
+    
+    return (name, url)
+    
 
 
 def main() -> int:
