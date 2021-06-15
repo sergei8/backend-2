@@ -97,46 +97,6 @@ TEACHER_PAGE = """
 світової економіки</strong></p>
 </td>
 </tr>
-<tr>
-<td style="width: 350px; vertical-align: top;"></td>
-<td style="width: 350px; vertical-align: top;"></td>
-</tr>
-<tr>
-<td style="width: 350px; vertical-align: top;">
-<p><img alt="" src="/file/Mjk1MQ==/710315f8a96075d932576da7a728d8c1.jpg" style="line-height: 20.8px; float: left; width: 170px; height: 170px; margin-left: 10px; margin-right: 10px;"><a href="https://knute.edu.ua/blog/read/?pid=41396&amp;uk"><span style="color:#0000FF;"><strong>КАЛЮЖНА
-НАТАЛІЯ ГЕННАДІЇВНА</strong></span></a></p>
-<p align="left"><strong>доктор економічних
-наук</strong><strong>,</strong>&nbsp;<strong>професор,&nbsp;</strong><strong>професор
-кафедри світової економіки</strong></p>
-</td>
-<td style="width: 350px; vertical-align: top;">
-<p><strong><img alt="" src="/file/Mjk1MQ==/a800f3a8a49ac67b09618d3d585a70d3.JPG" style="width: 170px; height: 170px; margin-left: 10px; margin-right: 10px; float: left;"></strong><a href="https://knute.edu.ua/blog/read/?pid=41368&amp;uk"><span style="color:#0000FF;"><strong>БОХАН
-АЛІНА ВАСИЛІВНА</strong></span></a></p>
-<p align="left"><strong>доктор економічних
-наук</strong><strong>,</strong>&nbsp;<strong>д</strong><strong>оцент,&nbsp;</strong><strong>професор
-кафедри світової економіки</strong></p>
-</td>
-</tr>
-<tr>
-<td style="width: 350px; vertical-align: top;"></td>
-<td style="width: 350px; vertical-align: top;"></td>
-</tr>
-<tr>
-<td style="width: 350px; vertical-align: top;">
-<p><img src="/image/ODQ3NQ==/4b8fbc7482f365b6d316057facb5da82.jpg" style="height: 173px; width: 170px; margin-left: 10px; margin-right: 10px; float: left;"><a href="https://knute.edu.ua/blog/read/?pid=41411&amp;uk"><span style="color:#0000FF;"><strong>КУДИРКО
-ЛЮДМИЛА ПЕТРІВНА</strong></span></a></p>
-<p align="left"><strong>кандидат економічних
-наук</strong><strong>,</strong>&nbsp;<strong>професор,&nbsp;</strong><strong>професор
-кафедри світової економіки</strong></p>
-</td>
-<td style="width: 350px; vertical-align: top;">
-<p><strong><img alt="" src="/file/Mjk1MQ==/9e0a18b29daa9f20e1f767f9f8e9af25.png" style="width: 170px; height: 170px; margin-left: 10px; margin-right: 10px; float: left;"></strong><a href="https://knute.edu.ua/blog/read/?pid=41387&amp;uk"><span style="color:#0000FF;"><strong>ЗАЛІЗНЮК
-ВІКТОРІЯ ПЕТРІВНА</strong></span></a></p>
-<p align="left"><strong>доктор наук</strong>&nbsp;<strong>з
-державного управління,&nbsp;</strong><strong>професор кафедри
-світової економіки</strong></p>
-</td>
-</tr>
 </tbody>
 </table>
 """

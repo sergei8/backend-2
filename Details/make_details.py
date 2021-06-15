@@ -35,7 +35,7 @@ class Department:
     def __init__(self, name: str, url: str):
         self.name: str = name                    # название кафедры
         self.url: str = url                      # url
-        self.teachers: List[Teacher] = []   # список преподавателей
+        self.teachers: List[Teacher] = []       # список преподавателей
 
 
 class Teacher:
@@ -45,7 +45,7 @@ class Teacher:
         self.last_name = name.split(' ')[0].strip()       # Фамілія
         self.first_name = name.split(' ')[1].strip()       # Имя
         self.middle_name = name.split(' ')[2].strip()       # Отчество
-        self.picture_url = picture_url                          # url фотки
+        self.picture_url = picture_url                      # url фотки
 
 
 def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
@@ -85,6 +85,7 @@ def make_dep_list(fac_name: str, menu: bs) -> List[Department]:
     li_tag: bs = fac_tag.parent
 
     # проходим по  `li` c `a` и выбираем названия кафедр
+    # TODO: при проходе ФФО попадаю в бесконечный цикл
     while(1):
 
         dep_tag: bs = li_tag.find_next('li')
@@ -116,8 +117,7 @@ def make_teacher_list(vikl_page: str) -> List[Teacher]:
     """
     # преподаватели находятся в таблице после a-тега "Викладацький склад"
     if vikl_page.find('a', text=SKLAD):
-        teacher_table_tag: bs = vikl_page.find(
-            'a', text=SKLAD).find_next('table')
+        teacher_table_tag: bs = vikl_page.find('a', text=SKLAD).find_next('table')
     else:
         return []
 
@@ -128,6 +128,8 @@ def make_teacher_list(vikl_page: str) -> List[Teacher]:
     teacher_list: List[Teacher] = []
     for td_tag in td_tags_list:
         name, picture_url = extract_teacher_info(td_tag)
+        if (name, picture_url) == (None, None):
+            continue
         teacher_list.append(Teacher(name, picture_url))
 
     return teacher_list
@@ -142,19 +144,21 @@ def get_vikl_sklad_href(dep_page: bs) -> str:
         return a_tag.attrs["href"]
 
     return ''
-
+ 
 
 def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
     """возвращает из ячейки таблицы имя и линк на фото препода
     """
     # поиск имени в a-теге
-    # TODO: обработать ситуацию когда `a` не найден (ячейка без препода)
-    name: str = td_tag.find('a').text
+    tag_a: bs = td_tag.find('a')
+    if tag_a == None:
+        return (None, None)
+    name: str = tag_a.text
     name = ' '.join(name.split())
-    
-    # поиск url 
+
+    # поиск url
     url: str = td_tag.find('img')["src"]
-    
+
     return (name, url)
     
 
@@ -179,12 +183,39 @@ def main() -> int:
 
     # построить список инстансов факультетов
     facs_list: List[Facultet] = make_fac_list(facs_deps_menu)
+    print("Список факультетов")
 
     # построить список инстансов кафедр для каждоо фак-та
     for fac in facs_list:
+        print(f"*** {fac.name}")
         fac.deps = make_dep_list(fac.name, facs_deps_menu)
-        
+    
+    print("Список кафедр")
+       
     # построить список инстансов преподавателей для каждой кафедры
+    for fac in facs_list:
+        print(f"{fac.name}")
+        
+        for dep in fac.deps:
+            print(f"   {dep.name}")    
+            # получить главную страницу кафедры
+            dep_page: Response = requests.get(dep.url)
+            if dep_page.status_code != 200:
+                print (f"Ошибка чтения страницы кафедры: {dep.name}")
+                continue
+            
+            dep_page_bs: bs = bs(dep_page.content, features="parser.html")
+            
+            # получить ссылку на страницу викладачей
+            vikl_url: str = get_vikl_sklad_href(dep_page_bs)
+            if vikl_url == '':
+                print(f"Не найдена ссылка на страницу преподов кафедры {dep.name}")
+                continue
+            
+            # построить список преподавателей
+            dep.teachers = make_teacher_list(vikl_url)
+            
+        
     
 
     return 0

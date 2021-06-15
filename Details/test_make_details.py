@@ -84,12 +84,15 @@ def test_make_teacher_list(teacher_page):
     
     expected = [
         T("ДУГІНЕЦЬ ГАННА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG"),
-        T("ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ", "file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
+        T("ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ", "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
         T("КОРЖ МАРИНА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
-        T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
+        T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "/file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
     ]     
     result = make_teacher_list(teacher_page)
-    assert result == expected
+    assert result[0] == expected[0]
+    assert result[1] == expected[1]
+    assert result[2] == expected[2]
+    assert result[3] == expected[3]
 
 @pytest.fixture
 def teacher_td():
