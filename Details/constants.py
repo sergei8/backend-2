@@ -108,3 +108,9 @@ TEACHER_TD = """
 <p><strong>доктор економічних наук, професор</strong></p>
 </td>
 """
+MAZARAKI = """
+<td style="text-align: center; vertical-align: middle;">
+<p><img src="/image/ODM1OA==/3a25ff19b7b81ca9c2d7ceec5ff55302.jpg" style="height: 226px; width: 185px; float: left; margin-left: 10px; margin-right: 10px;"></p>
+</td>
+<td>
+"""

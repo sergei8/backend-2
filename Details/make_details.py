@@ -4,21 +4,18 @@
     дописывает эти сведения в файл `time-table.json`
 """
 import sys
+sys.path.insert(0, '.')
+
+import re
+from bs4 import BeautifulSoup as bs
+from requests import Response
+import requests
+from requests.api import options
+from typing import Any, List, Tuple
+from helpers import clean_string
+from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD
 
 import bs4
-sys.path.insert(0, '.')
-from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD
-from helpers import clean_string
-
-from typing import Any, List, Tuple
-from requests.api import options
-
-
-import requests
-from requests import Response
-from bs4 import BeautifulSoup as bs
-import re
-
 
 class Facultet:
     """класс для факультета"""
@@ -81,29 +78,32 @@ def make_dep_list(fac_name: str, menu: bs) -> List[Department]:
     if fac_tag == None:
         print(f"\nНе найдены кафедры по факультету: {fac_name}")
         exit(1)
-    # выставлякмся на верхний  `<li>`
+    # выставлякмся на верхний  `<li>` для фак-та
     li_tag: bs = fac_tag.parent
 
     # проходим по  `li` c `a` и выбираем названия кафедр
-    # TODO: при проходе ФФО попадаю в бесконечный цикл
     while(1):
 
         dep_tag: bs = li_tag.find_next('li')
         if dep_tag == None:
             break
-        
-        a_tag:bs = dep_tag.find('a')
+
+        a_tag: bs = dep_tag.find('a', {"class": "att-menu-item"})
         if a_tag == None:
             break
-            
+
+        # если в названии есть каф-ра то вырезаем и н пкапливаем назву и линк
         if KAFEDRA in a_tag.text.split():
-            name:str = a_tag.text
-            url:str = a_tag.get('href')
+            name: str = a_tag.text
+            url: str = a_tag.get('href')
             dep_list.append(Department(name, url))
             li_tag = a_tag
             continue
+
+        # если след. фак-т то заканчиваем
         elif FACULTET in a_tag.text.split():
             break
+
         elif a_tag.text == '\n':
             li_tag = a_tag
             continue
@@ -111,25 +111,43 @@ def make_dep_list(fac_name: str, menu: bs) -> List[Department]:
     return dep_list
 
 
-def make_teacher_list(vikl_page: str) -> List[Teacher]:
+def make_teacher_list(vikl_url: str) -> List[Teacher]:
     """возвращает список инстансов преподавателей
     полученный парсингом soup vikl_page
     """
-    # преподаватели находятся в таблице после a-тега "Викладацький склад"
-    if vikl_page.find('a', text=SKLAD):
-        teacher_table_tag: bs = vikl_page.find('a', text=SKLAD).find_next('table')
-    else:
-        return []
 
-    # получить список всех td-тегов из таблицы
-    td_tags_list: List[bs] = teacher_table_tag.find_all('td')
+    vikl_page: str = requests.get(f"{KNTEU_URL}{vikl_url}").content
+    vikl_soup: bs = bs(vikl_page, features="lxml")
+
+    # # преподаватели находятся в таблице после a-тега "Викладацький склад"
+    # if vikl_soup.find('a', text=SKLAD):
+    #     teacher_table_tag: bs = vikl_soup.find('a', text=SKLAD).find_next('table')
+    # else:
+    #     return []
+
+    # получить список всех td-тегов из ВСЕХ таблиц на странице
+    td_tags_list: List[bs] = vikl_soup.find_all('td')
 
     # формируем выходной список проходя по всем ячейкам таблицы
     teacher_list: List[Teacher] = []
-    for td_tag in td_tags_list:
-        name, picture_url = extract_teacher_info(td_tag)
+    
+    # делаем список итерабельным
+    td_tags_list_iter = iter(td_tags_list)
+    
+    for td_tag in td_tags_list_iter:
+        name, picture_url = extract_teacher_info(td_tag, 1)
+        
         if (name, picture_url) == (None, None):
+            # пустая ячейка - не обрабатываем
             continue
+        elif (name, isinstance(picture_url, str)) == (None, True):
+            # найдена url фотки, но нету ФИО - идем на след. ячейку (attempt=2)
+            (name, _) = extract_teacher_info(next(td_tags_list_iter, td_tag), 2)
+            if name == None:
+                name = ""
+                print(f"ошибка парсинга")
+                exit(1)
+        
         teacher_list.append(Teacher(name, picture_url))
 
     return teacher_list
@@ -144,23 +162,42 @@ def get_vikl_sklad_href(dep_page: bs) -> str:
         return a_tag.attrs["href"]
 
     return ''
- 
 
-def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
-    """возвращает из ячейки таблицы имя и линк на фото препода
+
+def extract_teacher_info(td_tag: bs, attempt: int) -> Tuple[str, str]:
+    """возвращает из ячейки таблицы имя и линк на фото препода 
+    если за 1-ю попытку (attempt=1) не удается, то 2-й попыткой
+    добирается инфа из следующей ячейки
     """
-    # поиск имени в a-теге
-    tag_a: bs = td_tag.find('a')
-    if tag_a == None:
+    
+    name, url = None, None
+    
+    # пустой тег или конец итератора 
+    if td_tag == None:
         return (None, None)
-    name: str = tag_a.text
+    
+    # поиск url фотки в 1-й попытке. 
+    # если не найден, то эта ячейка не обрабатывается
+    if attempt == 1:
+        img_tag:bs = td_tag.find('img')
+        if img_tag == None:
+            return (None, None)
+        # иначе вытягиваем url фотки
+        url:str = img_tag['src']
+
+    # поиск имени в a-теге. если нету, то возвращаем только url фотки
+    tags_a: List[bs] = td_tag.find_all('a')
+    if len(tags_a) == 0:
+        return (None, url)
+    
+    # иначе вытягиваем ФИО
+    name = ""
+    for tag_a in tags_a:
+        name  += tag_a.text
+    
     name = ' '.join(name.split())
 
-    # поиск url
-    url: str = td_tag.find('img')["src"]
-
     return (name, url)
-    
 
 
 def main() -> int:
@@ -177,9 +214,10 @@ def main() -> int:
     # выделить `body`-контент
     main_page_body = soup_main_page.body
     # выделить контент главного меню
-    menues: List[bs] = main_page_body.find_all('ul', {"class": "dropdown-menu"})
+    menues: List[bs] = main_page_body.find_all(
+        'ul', {"class": "dropdown-menu"})
     # выделить выпадающее меню `факультеты и кафедры` (2-е)
-    facs_deps_menu:bs = menues[1]
+    facs_deps_menu: bs = menues[1]
 
     # построить список инстансов факультетов
     facs_list: List[Facultet] = make_fac_list(facs_deps_menu)
@@ -189,34 +227,33 @@ def main() -> int:
     for fac in facs_list:
         print(f"*** {fac.name}")
         fac.deps = make_dep_list(fac.name, facs_deps_menu)
-    
+
     print("Список кафедр")
-       
+
     # построить список инстансов преподавателей для каждой кафедры
     for fac in facs_list:
         print(f"{fac.name}")
-        
+
         for dep in fac.deps:
-            print(f"   {dep.name}")    
+            print(f"   {dep.name}", end=" : ")
             # получить главную страницу кафедры
-            dep_page: Response = requests.get(dep.url)
+            dep_page: Response = requests.get(f"{KNTEU_URL}{dep.url}")
             if dep_page.status_code != 200:
-                print (f"Ошибка чтения страницы кафедры: {dep.name}")
+                print(f"Ошибка чтения страницы кафедры: {dep.name}")
                 continue
-            
-            dep_page_bs: bs = bs(dep_page.content, features="parser.html")
-            
+
+            dep_page_bs: bs = bs(dep_page.content, features="lxml")
+
             # получить ссылку на страницу викладачей
             vikl_url: str = get_vikl_sklad_href(dep_page_bs)
             if vikl_url == '':
-                print(f"Не найдена ссылка на страницу преподов кафедры {dep.name}")
+                print(
+                    f"Не найдена ссылка на страницу преподов кафедры {dep.name}")
                 continue
-            
+
             # построить список преподавателей
             dep.teachers = make_teacher_list(vikl_url)
-            
-        
-    
+            print(len(dep.teachers))
 
     return 0
 

@@ -8,12 +8,14 @@ from make_details import  \
     extract_teacher_info
 
 from constants import MENU, MENU_1_FAC, DEP_PAGE, \
-    TEACHER_PAGE, TEACHER_TD
+    TEACHER_PAGE, TEACHER_TD, MAZARAKI
 
 
 @pytest.fixture
 def menu():
     return bs(MENU, features='html.parser')
+
+
 def test_make_fac_list(menu):
     result = make_fac_list(menu)
     expected = [
@@ -33,6 +35,8 @@ def test_make_fac_list(menu):
 def menu_1_fac():
     menu = bs(MENU_1_FAC, features='html.parser')
     return menu
+
+
 def test_make_dep_list(menu_1_fac):
     fac_name = "Факультет міжнародної торгівлі та права"
     result = make_dep_list(fac_name, menu_1_fac)
@@ -42,7 +46,7 @@ def test_make_dep_list(menu_1_fac):
             if self.name == o.name and self.url == o.url:
                 return True
             return False
-        
+
     expected = \
         [D("Кафедра світової економіки", "/blog/read?n=svitovoyi ekonomiki&uk"),
          D("""Кафедра міжнародного
@@ -50,58 +54,82 @@ def test_make_dep_list(menu_1_fac):
          D("""Кафедра
             філософії, соціології та політології""", "/blog/read?n=Department filosofsmbkikh ta socialmbnikh nauk&uk")
          ]
-    
+
     assert result == expected
 
 
 @pytest.fixture
 def dep_page():
     return bs(DEP_PAGE, features='html.parser')
+
+
 def test_get_vikl_sklad_page(dep_page):
-    
+
     result = get_vikl_sklad_href(dep_page)
     expected = "/blog/read/?pid=41465&uk"
     assert result == expected
-    
+
     result = get_vikl_sklad_href(bs("<body></body>", features="html.parser"))
     expected = ''
     assert result == expected
 
+
 @pytest.fixture
 def teacher_page():
     return bs(TEACHER_PAGE, features="html.parser")
+
+
 def test_make_teacher_list(teacher_page):
-    
+
     class T(Teacher):
         def __eq__(self, o: object) -> bool:
             if self.first_name == o.first_name and \
                self.last_name == o.last_name and  \
                self.middle_name == o.middle_name and \
                self.picture_url == o.picture_url:
-                   return True
+                return True
             else:
                 return False
-    
+
     expected = [
-        T("ДУГІНЕЦЬ ГАННА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG"),
-        T("ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ", "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
-        T("КОРЖ МАРИНА ВОЛОДИМИРІВНА", "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
+        T("ДУГІНЕЦЬ ГАННА ВОЛОДИМИРІВНА",
+          "/file/Mjk1MQ==/156938c5dc81fcd27209ba38c891adbf.JPG"),
+        T("ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
+          "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"),
+        T("КОРЖ МАРИНА ВОЛОДИМИРІВНА",
+          "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
         T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "/file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
-    ]     
+    ]
     result = make_teacher_list(teacher_page)
     assert result[0] == expected[0]
     assert result[1] == expected[1]
     assert result[2] == expected[2]
     assert result[3] == expected[3]
 
+
 @pytest.fixture
 def teacher_td():
     return bs(TEACHER_TD, features="html.parser")
 
+
 def test_extract_teacher_info(teacher_td):
-    result = extract_teacher_info(teacher_td)
+    result = extract_teacher_info(teacher_td, 1)
     expected = (
         "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
         "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
+    )
+    assert result == expected
+
+
+@pytest.fixture
+def mazaraki_td():
+    return bs(MAZARAKI, features="html.parser")
+
+
+def test_mazaraki(mazaraki_td):
+    result = extract_teacher_info(mazaraki_td, 1)
+    expected = (
+        None,
+        "/image/ODM1OA==/3a25ff19b7b81ca9c2d7ceec5ff55302.jpg"
     )
     assert result == expected
