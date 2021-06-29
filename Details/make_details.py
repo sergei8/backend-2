@@ -6,16 +6,20 @@
 import sys
 sys.path.insert(0, '.')
 
+
 import re
 from bs4 import BeautifulSoup as bs
 from requests import Response
 import requests
 from requests.api import options
-from typing import Any, List, Tuple
-from helpers import clean_string
-from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD
-
+from typing import Any, Dict, List, Tuple
+from helpers import clean_string, lat_to_cyr
+from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
 import bs4
+import json
+
+NO_PHOTO = "no-photo"
+
 
 class Facultet:
     """класс для факультета"""
@@ -39,10 +43,32 @@ class Teacher:
     """ класс для преподавателя """
 
     def __init__(self, name: str, picture_url: str = ''):
-        self.last_name = name.split(' ')[0].strip()       # Фамілія
-        self.first_name = name.split(' ')[1].strip()       # Имя
-        self.middle_name = name.split(' ')[2].strip()       # Отчество
-        self.picture_url = picture_url                      # url фотки
+        if len(name.split()) != 3:
+            # имя не распарсено - забиваем пробелами
+            self.last_name, self.first_name, self.middle_name = ('', '', '')
+        else:
+            self.last_name = name.split(' ')[0].strip()       # Фамілія
+            self.first_name = name.split(' ')[1].strip()       # Имя
+            self.middle_name = name.split(' ')[2].strip()       # Отчество
+    # привести линки на фотки к стандартному виду
+        if 'http' in picture_url:
+            url_splited: List[str] = picture_url.split('edu.ua')
+            if len(url_splited) == 2:
+                self.picture_url = url_splited[1]
+            else:
+                self.picture_url = NO_PHOTO
+                self.__print_warning(f"{name} - ошибка парсинга: {picture_url}")
+        elif 'data' in picture_url:
+            self.picture_url = NO_PHOTO
+            self.__print_warning(f"{name} - img = data")
+        elif picture_url == '':
+            self.picture_url = NO_PHOTO
+            self.__print_warning(f"{name} - нет фотки")
+        else:
+            self.picture_url = picture_url                   # url фотки
+
+    def __print_warning(self, msg:str):
+        print(f"\n\t{msg}", end=" ")
 
 
 def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
@@ -128,27 +154,34 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     # получить список всех td-тегов из ВСЕХ таблиц на странице
     td_tags_list: List[bs] = vikl_soup.find_all('td')
 
-    # формируем выходной список проходя по всем ячейкам таблицы
+    # список реквизитов преподавателей
     teacher_list: List[Teacher] = []
-    
-    # делаем список итерабельным
-    td_tags_list_iter = iter(td_tags_list)
-    
-    for td_tag in td_tags_list_iter:
-        name, picture_url = extract_teacher_info(td_tag, 1)
-        
+
+    # список td-тегов, которые не соотв. стандартному
+    non_standart_td: List[bs] = []
+
+    for td_tag in td_tags_list:
+        name, picture_url = extract_teacher_info(td_tag)
+
         if (name, picture_url) == (None, None):
             # пустая ячейка - не обрабатываем
             continue
-        elif (name, isinstance(picture_url, str)) == (None, True):
-            # найдена url фотки, но нету ФИО - идем на след. ячейку (attempt=2)
-            (name, _) = extract_teacher_info(next(td_tags_list_iter, td_tag), 2)
-            if name == None:
-                name = ""
-                print(f"ошибка парсинга")
-                exit(1)
-        
+        elif name == None or picture_url == None:
+            # накопим для дальнейшего анализа
+            non_standart_td.append(td_tag)
+            continue
+
         teacher_list.append(Teacher(name, picture_url))
+
+    # попытка вытащить из нестандартных ячеек реквизиты преподов
+    for i in range(len(non_standart_td) - 1):
+        _, picture_url = extract_teacher_info(non_standart_td[i])
+        # если в ячейке есть `picture_url` то в следующей может быть имя
+        name, _ = extract_teacher_info(non_standart_td[i + 1])
+
+        # если вытащили реквизиты, то добавим их в выходной
+        if picture_url and name:
+            teacher_list.append(Teacher(name, picture_url))
 
     return teacher_list
 
@@ -164,37 +197,34 @@ def get_vikl_sklad_href(dep_page: bs) -> str:
     return ''
 
 
-def extract_teacher_info(td_tag: bs, attempt: int) -> Tuple[str, str]:
+def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
     """возвращает из ячейки таблицы имя и линк на фото препода 
     если за 1-ю попытку (attempt=1) не удается, то 2-й попыткой
     добирается инфа из следующей ячейки
     """
-    
+
     name, url = None, None
-    
-    # пустой тег или конец итератора 
+
+    # пустой тег
     if td_tag == None:
         return (None, None)
-    
-    # поиск url фотки в 1-й попытке. 
-    # если не найден, то эта ячейка не обрабатывается
-    if attempt == 1:
-        img_tag:bs = td_tag.find('img')
-        if img_tag == None:
-            return (None, None)
-        # иначе вытягиваем url фотки
-        url:str = img_tag['src']
+
+    # поиск url фотки
+    img_tag: bs = td_tag.find('img')
+    if img_tag != None:
+        # вытягиваем url фотки
+        url: str = img_tag['src']
 
     # поиск имени в a-теге. если нету, то возвращаем только url фотки
     tags_a: List[bs] = td_tag.find_all('a')
     if len(tags_a) == 0:
         return (None, url)
-    
+
     # иначе вытягиваем ФИО
     name = ""
     for tag_a in tags_a:
-        name  += tag_a.text
-    
+        name += tag_a.text
+
     name = ' '.join(name.split())
 
     return (name, url)
@@ -254,6 +284,27 @@ def main() -> int:
             # построить список преподавателей
             dep.teachers = make_teacher_list(vikl_url)
             print(len(dep.teachers))
+            
+    
+    """
+    дописываем  данные из Facs_list в файл time-table.json
+    как поле `detail`:...
+    """
+    # получаем из timetable список ФИО преподов
+    with open(TIME_TABLE_FILE) as f:
+        time_table: Dict = json.loads(f.read())
+
+    # список преподов из time-table
+    prepod_names_list: List[str] = list(time_table.keys())
+
+    # на всякий случай уберем латиницу из фамилий
+    prepod_names_list = list(map(lambda x: lat_to_cyr(x), prepod_names_list))
+
+    for fac in facs_list:
+        for dep in fac.deps:
+            pass
+        
+                
 
     return 0
 
