@@ -9,3 +9,11 @@ def clean_string(string: str) -> str:
     string = ' '.join(string.split())
 
     return string
+
+def lat_to_cyr(string:str):
+    """замещает латиницу кирилицей
+    """
+    lat = 'EeTIiOoPpAaHKXxCcBM'
+    cyr = 'ЕеТІіОоРрАаНКХхСсВМ'
+    trans_tab = string.maketrans(lat, cyr)
+    return string.translate(trans_tab)
