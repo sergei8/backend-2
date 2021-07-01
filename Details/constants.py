@@ -42,7 +42,7 @@ DEP_PAGE = """
 <ul class="inline nav nav-tabs trix-top-menu disable_hide_menu">
     <li class="trix-top-menu-item"><a href="/blog/read/?pid=33244&amp;uk" class="tab-headers trix-top-menu-item-hrf">Про кафедру</a></li>
   
-    <li class="trix-top-menu-item"><a href="/blog/read/?pid=41465&amp;uk" class="tab-headers trix-top-menu-item-hrf">Викладацький склад</a></li>
+    <li class="trix-top-menu-item"><a href="/blog/read/?pid=41465&amp;uk" class="tab-headers trix-top-menu-item-hrf">Викладацький склад </a></li>
   
   
     <li class="trix-top-menu-item"><a href="/blog/read/?pid=33259&amp;uk" class="tab-headers trix-top-menu-item-hrf">Наукова робота</a></li>
@@ -114,3 +114,53 @@ MAZARAKI = """
 </td>
 <td>
 """
+
+
+TIME_TABLE_EXPECTED = {
+    "доц Котляр В Ю ": {
+        "Перший тиждень": {},
+        "Другий тиждень": {},
+        "details": {
+            "img_url": "https://knute.edu.ua/image/MTc3Nw==/658e9b52fd72bb41e738ae71189a70c1.JPG",
+            "name": "КОТЛЯР ВАЛЕРІЙ ЮРІЙОВИЧ",
+            "dep": "Кафедра вищої та прикладної математики",
+            "fac": "Факультет інформаційних технологій",
+        }
+    },
+    "доц Михайленко С В ": {
+        "Перший тиждень": {},
+        "Другий тиждень": {},
+        "details": {
+            "img_url": "https://knute.edu.ua/file/MzA1MA==/a39b5af4e1cb1e58bb6a4252bda113d5.jpeg",
+            "name": "МИХАЙЛЕНКО СТАНІСЛАВ ВАСИЛЬОВИЧ",
+            "dep": "Кафедра вищої та прикладної математики",
+            "fac": "Факультет інформаційних технологій",
+        }
+    },
+    "проф П'ятницька Г Т ": {
+        "Перший тиждень": {},
+        "Другий тиждень": {},
+        "details": {
+            "img_url": "https://knute.edu.ua/image/NDY=/dfae48e3bbc8f5f8e5d8667ba3a0932d.jpg",
+            "name": "ШУМЕЙКО НАТАЛЯ ВІКТОРІВНА",
+            "dep": "Кафедра сучасних європейських мов",
+            "fac": "Факультет міжнародної торгівлі та права",
+        }
+    }
+}
+
+TIME_TABLE_BEFORE = {
+    "доц Котляр В Ю ": {
+        "Перший тиждень": {},
+        "Другий тиждень": {}
+    },
+    "доц Михайленко С В ": {
+        "Перший тиждень": {},
+        "Другий тиждень": {}
+    },
+    "П'ятницька Г Т ": {
+        "Перший тиждень": {},
+        "Другий тиждень": {},
+    }
+}
+

@@ -3,23 +3,24 @@
     - ФИО
     дописывает эти сведения в файл `time-table.json`
 """
+
+from os import name
 import sys
 sys.path.insert(0, '.')
 
-
-import re
-from bs4 import BeautifulSoup as bs
-from requests import Response
-import requests
-from requests.api import options
-from typing import Any, Dict, List, Tuple
-from helpers import clean_string, lat_to_cyr
-from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
-import bs4
+#######################
 import json
+import bs4
+from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
+from helpers import clean_string, lat_to_cyr
+from typing import Any, Dict, List, Tuple, Union   
+from requests.api import options
+import requests
+from requests import Response
+from bs4 import BeautifulSoup as bs
+import re
 
 NO_PHOTO = "no-photo"
-
 
 class Facultet:
     """класс для факультета"""
@@ -47,9 +48,9 @@ class Teacher:
             # имя не распарсено - забиваем пробелами
             self.last_name, self.first_name, self.middle_name = ('', '', '')
         else:
-            self.last_name = name.split(' ')[0].strip()       # Фамілія
-            self.first_name = name.split(' ')[1].strip()       # Имя
-            self.middle_name = name.split(' ')[2].strip()       # Отчество
+            self.last_name   = name.split(' ')[0].strip().upper()       # Фамілія
+            self.first_name  = name.split(' ')[1].strip().upper()       # Имя
+            self.middle_name = name.split(' ')[2].strip().upper()       # Отчество
     # привести линки на фотки к стандартному виду
         if 'http' in picture_url:
             url_splited: List[str] = picture_url.split('edu.ua')
@@ -57,7 +58,8 @@ class Teacher:
                 self.picture_url = url_splited[1]
             else:
                 self.picture_url = NO_PHOTO
-                self.__print_warning(f"{name} - ошибка парсинга: {picture_url}")
+                self.__print_warning(
+                    f"{name} - ошибка парсинга: {picture_url}")
         elif 'data' in picture_url:
             self.picture_url = NO_PHOTO
             self.__print_warning(f"{name} - img = data")
@@ -65,10 +67,13 @@ class Teacher:
             self.picture_url = NO_PHOTO
             self.__print_warning(f"{name} - нет фотки")
         else:
-            self.picture_url = picture_url                   # url фотки
+            self.picture_url = f"{KNTEU_URL}{picture_url}"       # url фотки
 
-    def __print_warning(self, msg:str):
+    def __print_warning(self, msg: str):
         print(f"\n\t{msg}", end=" ")
+
+
+facs_list: List[Facultet]
 
 
 def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
@@ -190,7 +195,7 @@ def get_vikl_sklad_href(dep_page: bs) -> str:
     """ищет на странице кафедры ссылку на `Викладацький склад`
     и возвращает ее или `` если не найдено
     """
-    a_tag = dep_page.find('a', text=SKLAD)
+    a_tag = dep_page.find('a', text=re.compile(SKLAD))
     if a_tag != None:
         return a_tag.attrs["href"]
 
@@ -229,6 +234,18 @@ def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
 
     return (name, url)
 
+def get_teacher_key(name_key: str, time_table) -> Union[str, None]:
+    """возвражает ключ записи препода из `time-table` или none
+    """
+    # TODO обработать апостроф
+    # TODO обработать фамілію через '-' 
+    
+    
+    for teacher in time_table.keys():
+        if name_key in teacher:
+            return teacher
+    
+    return None
 
 def main() -> int:
 
@@ -250,7 +267,7 @@ def main() -> int:
     facs_deps_menu: bs = menues[1]
 
     # построить список инстансов факультетов
-    facs_list: List[Facultet] = make_fac_list(facs_deps_menu)
+    facs_list = make_fac_list(facs_deps_menu)
     print("Список факультетов")
 
     # построить список инстансов кафедр для каждоо фак-та
@@ -284,27 +301,35 @@ def main() -> int:
             # построить список преподавателей
             dep.teachers = make_teacher_list(vikl_url)
             print(len(dep.teachers))
-            
-    
-    """
-    дописываем  данные из Facs_list в файл time-table.json
-    как поле `detail`:...
-    """
-    # получаем из timetable список ФИО преподов
+
     with open(TIME_TABLE_FILE) as f:
-        time_table: Dict = json.loads(f.read())
+        time_table: Dict[str, Any] = json.loads(f.read())
 
-    # список преподов из time-table
-    prepod_names_list: List[str] = list(time_table.keys())
-
-    # на всякий случай уберем латиницу из фамилий
-    prepod_names_list = list(map(lambda x: lat_to_cyr(x), prepod_names_list))
-
+    # формировать поле `details` для каждого прпода
+    print("Формирую `details`")
     for fac in facs_list:
         for dep in fac.deps:
-            pass
-        
+            for teacher in dep.teachers:
+                details = {
+                    "img_url": teacher.picture_url,
+                    "name": f"{teacher.last_name} {teacher.first_name} {teacher.middle_name}",
+                    "dep": dep.name,
+                    "fac": fac.name
+                }
                 
+                # нформируем ключ для поиска препода в `time-table`
+                last_name_key   =  teacher.last_name.capitalize()
+                first_name_key  = teacher.first_name[:1]
+                middle_name_key = teacher.middle_name[:1]
+                name_key = f"{last_name_key} {first_name_key} {middle_name_key}"
+                
+                # искать ключ записи препода в `time-table`
+                teacher_key = get_teacher_key(name_key, time_table)
+                if teacher_key != None:
+                    # если ключ найден - обновляем поле `details` в `time-table`
+                    time_table[teacher_key]["details"] = details
+                else:
+                    print(f"{name_key} - не найден")
 
     return 0
 

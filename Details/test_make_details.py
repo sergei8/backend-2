@@ -5,10 +5,12 @@ from make_details import Facultet, Department, Teacher
 from make_details import  \
     make_fac_list, make_dep_list, \
     make_teacher_list, get_vikl_sklad_href, \
-    extract_teacher_info
+    extract_teacher_info, get_teacher_key
 
 from constants import MENU, MENU_1_FAC, DEP_PAGE, \
-    TEACHER_PAGE, TEACHER_TD, MAZARAKI
+    TEACHER_PAGE, TEACHER_TD, MAZARAKI, TIME_TABLE_EXPECTED, TIME_TABLE_BEFORE
+
+from config_app import KNTEU_URL
 
 
 @pytest.fixture
@@ -113,10 +115,10 @@ def teacher_td():
 
 
 def test_extract_teacher_info(teacher_td):
-    result = extract_teacher_info(teacher_td, 1)
+    result = extract_teacher_info(teacher_td)
     expected = (
         "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
-        "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
+        f"{KNTEU_URL}/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
     )
     assert result == expected
 
@@ -133,3 +135,14 @@ def test_mazaraki(mazaraki_td):
         "/image/ODM1OA==/3a25ff19b7b81ca9c2d7ceec5ff55302.jpg"
     )
     assert result == expected
+
+def test_get_teacher_key():
+    expected = "доц Котляр В Ю "
+    result = get_teacher_key("Котляр В Ю", TIME_TABLE_EXPECTED)
+    assert expected == result
+    expected = None
+    result = get_teacher_key("доц ПУПКИН", TIME_TABLE_EXPECTED)
+    assert expected == result
+    expected = "проф П'ятницька Г Т "
+    result = get_teacher_key("П'ятницька Г Т", TIME_TABLE_EXPECTED)
+    assert expected == result
