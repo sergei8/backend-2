@@ -12,7 +12,7 @@ sys.path.insert(0, '.')
 import json
 import bs4
 from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
-from helpers import clean_string, lat_to_cyr
+from helpers import clean_string, lat_to_cyr, fix_apostroph, complex_name
 from typing import Any, Dict, List, Tuple, Union   
 from requests.api import options
 import requests
@@ -237,9 +237,11 @@ def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
 def get_teacher_key(name_key: str, time_table) -> Union[str, None]:
     """возвражает ключ записи препода из `time-table` или none
     """
-    # TODO обработать апостроф
-    # TODO обработать фамілію через '-' 
+    # поправить апостроф
+    mame_key = fix_apostroph(name_key)
     
+    # подправить фамілію через '-' 
+    name_key = complex_name(name_key)
     
     for teacher in time_table.keys():
         if name_key in teacher:
@@ -329,7 +331,7 @@ def main() -> int:
                     # если ключ найден - обновляем поле `details` в `time-table`
                     time_table[teacher_key]["details"] = details
                 else:
-                    print(f"{name_key} - не найден")
+                    print(f"{name_key}: {fac.name}, {dep.name} - не найден")
 
     return 0
 
