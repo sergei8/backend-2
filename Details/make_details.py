@@ -319,10 +319,10 @@ def main() -> int:
                     "fac": fac.name
                 }
                 
-                # нформируем ключ для поиска препода в `time-table`
+                # формируем ключ для поиска препода в `time-table`
                 last_name_key   =  teacher.last_name.capitalize()
-                first_name_key  = teacher.first_name[:1]
-                middle_name_key = teacher.middle_name[:1]
+                first_name_key  = teacher.first_name[:1].upper()
+                middle_name_key = teacher.middle_name[:1].upper()
                 name_key = f"{last_name_key} {first_name_key} {middle_name_key}"
                 
                 # искать ключ записи препода в `time-table`
@@ -332,6 +332,10 @@ def main() -> int:
                     time_table[teacher_key]["details"] = details
                 else:
                     print(f"{name_key}: {fac.name}, {dep.name} - не найден")
+
+    # перезаписать `time-table.json`
+    with open('time-table-new.json', 'w') as f:
+        f.write(json.dumps(time_table, indent=2, ensure_ascii=False))
 
     return 0
 
