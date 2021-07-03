@@ -1,8 +1,9 @@
-""" извлекает из страницы "Викладацький склад" сведения о преподавателе:
-    - ссылка на фото
-    - ФИО
-    дописывает эти сведения в файл `time-table.json`
-"""
+# извлекает из страницы "Викладацький склад" сведения о преподавателе:
+#     - ссылка на фото
+#     - название фак-та
+#     - название каф-ры
+#     - ФИО
+# дописывает эти сведения в файл `time-table.json`
 
 from os import name
 import sys
@@ -71,9 +72,6 @@ class Teacher:
 
     def __print_warning(self, msg: str):
         print(f"\n\t{msg}", end=" ")
-
-
-facs_list: List[Facultet]
 
 
 def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
@@ -149,12 +147,6 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
 
     vikl_page: str = requests.get(f"{KNTEU_URL}{vikl_url}").content
     vikl_soup: bs = bs(vikl_page, features="lxml")
-
-    # # преподаватели находятся в таблице после a-тега "Викладацький склад"
-    # if vikl_soup.find('a', text=SKLAD):
-    #     teacher_table_tag: bs = vikl_soup.find('a', text=SKLAD).find_next('table')
-    # else:
-    #     return []
 
     # получить список всех td-тегов из ВСЕХ таблиц на странице
     td_tags_list: List[bs] = vikl_soup.find_all('td')
