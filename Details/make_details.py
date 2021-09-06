@@ -11,7 +11,6 @@ sys.path.insert(0, '.')
 
 #######################
 import json
-import bs4
 from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
 from helpers import clean_string, lat_to_cyr, fix_apostroph, complex_name
 from typing import Any, Dict, List, Tuple, Union   

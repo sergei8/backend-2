@@ -16,7 +16,7 @@ from config_app import NAME_OF_WS, CONFIG_JSON, KNTEU_URL, \
 from pandas.core.frame import DataFrame
 import pandas as pd
 import json
-from typing import Any
+from typing import Any, List
 import re
 
 def make_groups_list(href: str) -> list[str]:
