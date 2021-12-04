@@ -51,23 +51,24 @@ class Teacher:
             self.last_name   = name.split(' ')[0].strip().upper()       # Фамілія
             self.first_name  = name.split(' ')[1].strip().upper()       # Имя
             self.middle_name = name.split(' ')[2].strip().upper()       # Отчество
-    # привести линки на фотки к стандартному виду
-        if 'http' in picture_url:
-            url_splited: List[str] = picture_url.split('edu.ua')
-            if len(url_splited) == 2:
-                self.picture_url = url_splited[1]
-            else:
-                self.picture_url = NO_PHOTO
-                self.__print_warning(
-                    f"{name} - ошибка парсинга: {picture_url}")
-        elif 'data' in picture_url:
+        
+        # привести линки на фотки к стандартному виду
+        if 'data' in picture_url:
             self.picture_url = NO_PHOTO
             self.__print_warning(f"{name} - img = data")
         elif picture_url == '':
             self.picture_url = NO_PHOTO
             self.__print_warning(f"{name} - нет фотки")
         else:
-            self.picture_url = f"{KNTEU_URL}{picture_url}"       # url фотки
+            if len(url_splited := picture_url.split('image')) == 2:
+                self.picture_url = f"{KNTEU_URL}/image{url_splited[1]}"
+            elif len(url_splited := picture_url.split('file')) == 2:
+                self.picture_url = f"{KNTEU_URL}/file{url_splited[1]}"
+            else:
+                self.picture_url = NO_PHOTO
+                self.__print_warning(
+                    f"{name} - ошибка парсинга: {picture_url}")
+
 
     def __print_warning(self, msg: str):
         print(f"\n\t{msg}", end=" ")
@@ -183,14 +184,16 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
 
 
 def get_vikl_sklad_href(dep_page: bs) -> str:
-    """ищет на странице кафедры ссылку на `Викладацький склад`
+    """ищет на странице кафедры ссылку на `Викладацький склад` и
+    другие варианты из списка `SKLAD`
     и возвращает ее или `` если не найдено
     """
-    a_tag = dep_page.find('a', text=re.compile(SKLAD))
-    if a_tag != None:
-        return a_tag.attrs["href"]
-
-    return ''
+    # a_tag = dep_page.find('a', text=re.compile(SKLAD))
+    a_tags = list(filter(lambda x: x != None, [dep_page.find('a', text=re.compile(x)) for x in SKLAD]))
+    if len(a_tags) == 0 or len(a_tags) > 1:
+        return ''
+    
+    return a_tags[0].attrs["href"]
 
 
 def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
@@ -296,7 +299,7 @@ def main() -> int:
             print(len(dep.teachers))
 
     with open(TIME_TABLE_FILE) as f:
-        time_table: Dict[str, Any] = json.loads(f.read())
+        time_table: dict[str, Any] = json.loads(f.read())
 
     # формировать поле `details` для каждого прпода
     print("Формирую `details`")
@@ -305,9 +308,9 @@ def main() -> int:
             for teacher in dep.teachers:
                 details = {
                     "img_url": teacher.picture_url,
-                    "name": f"{teacher.last_name} {teacher.first_name} {teacher.middle_name}",
-                    "dep": dep.name,
-                    "fac": fac.name
+                    "name"   : f"{teacher.last_name} {teacher.first_name} {teacher.middle_name}",
+                    "dep"    : dep.name,
+                    "fac"    : fac.name
                 }
                 
                 # формируем ключ для поиска препода в `time-table`
@@ -318,7 +321,7 @@ def main() -> int:
                 
                 # искать ключ записи препода в `time-table`
                 teacher_key = get_teacher_key(name_key, time_table)
-                if teacher_key != None:
+                if teacher_key is not None:
                     # если ключ найден - обновляем поле `details` в `time-table`
                     time_table[teacher_key]["details"] = details
                 else:
