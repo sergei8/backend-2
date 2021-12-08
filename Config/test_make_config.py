@@ -1,5 +1,5 @@
 import pytest
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup as bs # type: ignore
 
 from make_config import \
     extract_time_tables, \
@@ -10,7 +10,7 @@ from make_config import \
     
 
 @pytest.fixture
-def soup_page():
+def soup_page() -> bs:
     test_html = """
     <html>
         <body>

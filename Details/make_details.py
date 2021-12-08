@@ -5,7 +5,7 @@
 #     - ФИО
 # дописывает эти сведения в файл `time-table.json`
 
-from os import name
+# from os import name
 import sys
 sys.path.insert(0, '.')
 
@@ -13,11 +13,11 @@ sys.path.insert(0, '.')
 import json
 from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
 from helpers import clean_string, lat_to_cyr, fix_apostroph, complex_name
-from typing import Any, Dict, List, Tuple, Union   
+from typing import Any, Dict, List, Tuple, Union, Optional 
 from requests.api import options
 import requests
 from requests import Response
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup as bs # type: ignore
 import re
 
 NO_PHOTO = "no-photo"
@@ -70,7 +70,7 @@ class Teacher:
                     f"{name} - ошибка парсинга: {picture_url}")
 
 
-    def __print_warning(self, msg: str):
+    def __print_warning(self, msg: str) -> None:
         print(f"\n\t{msg}", end=" ")
 
 
@@ -85,7 +85,7 @@ def make_fac_list(fac_dep_menu: bs) -> List[Facultet]:
     # проход по списку тегов названий и выделение из их
     # родителя (a-тега) названия и url факультета
     # создание инстанса Facultet и заненсенее его в список
-    facultets = []
+    facultets: List[Facultet] = []
     for tag in fac_tags:
         name: str = tag.parent.find('span').text
         url: str = tag.parent.get('href')
@@ -145,7 +145,7 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     полученный парсингом soup vikl_page
     """
 
-    vikl_page: str = requests.get(f"{KNTEU_URL}{vikl_url}").content
+    vikl_page: bytes = requests.get(f"{KNTEU_URL}{vikl_url}").content
     vikl_soup: bs = bs(vikl_page, features="lxml")
 
     # получить список всех td-тегов из ВСЕХ таблиц на странице
@@ -160,10 +160,10 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     for td_tag in td_tags_list:
         name, picture_url = extract_teacher_info(td_tag)
 
-        if (name, picture_url) == (None, None):
+        if (name, picture_url) == ('', ''):
             # пустая ячейка - не обрабатываем
             continue
-        elif name == None or picture_url == None:
+        elif name == '' or picture_url == '':
             # накопим для дальнейшего анализа
             non_standart_td.append(td_tag)
             continue
@@ -183,13 +183,12 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     return teacher_list
 
 
-def get_vikl_sklad_href(dep_page: bs) -> str:
+def get_vikl_sklad_href(dep_page: bs) -> Any:
     """ищет на странице кафедры ссылку на `Викладацький склад` и
     другие варианты из списка `SKLAD`
     и возвращает ее или `` если не найдено
     """
-    # a_tag = dep_page.find('a', text=re.compile(SKLAD))
-    a_tags = list(filter(lambda x: x != None, [dep_page.find('a', text=re.compile(x)) for x in SKLAD]))
+    a_tags: List[Any] = list(filter(lambda x: x != None, [dep_page.find('a', text=re.compile(x)) for x in SKLAD]))
     if len(a_tags) == 0 or len(a_tags) > 1:
         return ''
     
@@ -202,22 +201,22 @@ def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
     добирается инфа из следующей ячейки
     """
 
-    name, url = None, None
+    name, url = '', ''
 
     # пустой тег
     if td_tag == None:
-        return (None, None)
+        return ('', '')
 
     # поиск url фотки
     img_tag: bs = td_tag.find('img')
     if img_tag != None:
         # вытягиваем url фотки
-        url: str = img_tag['src']
+        url = img_tag['src']
 
     # поиск имени в a-теге. если нету, то возвращаем только url фотки
     tags_a: List[bs] = td_tag.find_all('a')
     if len(tags_a) == 0:
-        return (None, url)
+        return ('', url)
 
     # иначе вытягиваем ФИО
     name = ""
@@ -228,7 +227,7 @@ def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
 
     return (name, url)
 
-def get_teacher_key(name_key: str, time_table) -> Union[str, None]:
+def get_teacher_key(name_key: str, time_table: Dict[str, Any]) -> str:
     """возвражает ключ записи препода из `time-table` или none
     """
     # поправить апостроф
@@ -241,7 +240,7 @@ def get_teacher_key(name_key: str, time_table) -> Union[str, None]:
         if name_key in teacher:
             return teacher
     
-    return None
+    return ''
 
 def main() -> int:
 

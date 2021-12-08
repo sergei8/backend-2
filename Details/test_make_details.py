@@ -1,6 +1,10 @@
+from typing import Any, Tuple
+from unittest import mock
 import pytest
+# import requests
 
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup as bs 
+
 from make_details import Facultet, Department, Teacher
 from make_details import  \
     make_fac_list, make_dep_list, \
@@ -14,11 +18,11 @@ from config_app import KNTEU_URL
 
 
 @pytest.fixture
-def menu():
+def menu() -> bs:
     return bs(MENU, features='html.parser')
 
 
-def test_make_fac_list(menu):
+def test_make_fac_list(menu: bs) -> None:
     result = make_fac_list(menu)
     expected = [
         Facultet("Факультет міжнародної торгівлі та права",
@@ -34,18 +38,18 @@ def test_make_fac_list(menu):
 
 
 @pytest.fixture
-def menu_1_fac():
+def menu_1_fac() -> bs:
     menu = bs(MENU_1_FAC, features='html.parser')
     return menu
 
 
-def test_make_dep_list(menu_1_fac):
+def test_make_dep_list(menu_1_fac: bs) -> None:
     fac_name = "Факультет міжнародної торгівлі та права"
     result = make_dep_list(fac_name, menu_1_fac)
 
     class D(Department):
         def __eq__(self, o: object) -> bool:
-            if self.name == o.name and self.url == o.url:
+            if self.name == o.name and self.url == o.url:  # type: ignore
                 return True
             return False
 
@@ -61,11 +65,11 @@ def test_make_dep_list(menu_1_fac):
 
 
 @pytest.fixture
-def dep_page():
+def dep_page() -> bs:
     return bs(DEP_PAGE, features='html.parser')
 
 
-def test_get_vikl_sklad_page(dep_page):
+def test_get_vikl_sklad_page(dep_page: Any) -> None:
 
     result = get_vikl_sklad_href(dep_page)
     expected = "/blog/read/?pid=41465&uk"
@@ -77,18 +81,18 @@ def test_get_vikl_sklad_page(dep_page):
 
 
 @pytest.fixture
-def teacher_page():
+def teacher_page() -> bs:
     return bs(TEACHER_PAGE, features="html.parser")
 
 
-def test_make_teacher_list(teacher_page):
+def test_make_teacher_list(teacher_page: bs) -> None:
 
     class T(Teacher):
         def __eq__(self, o: object) -> bool:
-            if self.first_name == o.first_name and \
-               self.last_name == o.last_name and  \
-               self.middle_name == o.middle_name and \
-               self.picture_url == o.picture_url:
+            if self.first_name == o.first_name and      \
+               self.last_name == o.last_name and        \
+               self.middle_name == o.middle_name and    \
+               self.picture_url == o.picture_url:       # type: ignore
                 return True
             else:
                 return False
@@ -102,7 +106,10 @@ def test_make_teacher_list(teacher_page):
           "/file/Mjk1MQ==/ccaf86485fe54b5182d890b733020fb9.png"),
         T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "/file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
     ]
-    result = make_teacher_list(teacher_page)
+    
+    with mock.patch.object(make_teacher_list, "requests", return_value=b"proba"):
+        result = make_teacher_list(teacher_page)
+        
     assert result[0] == expected[0]
     assert result[1] == expected[1]
     assert result[2] == expected[2]
@@ -110,11 +117,11 @@ def test_make_teacher_list(teacher_page):
 
 
 @pytest.fixture
-def teacher_td():
+def teacher_td() -> bs:
     return bs(TEACHER_TD, features="html.parser")
 
 
-def test_extract_teacher_info(teacher_td):
+def test_extract_teacher_info(teacher_td: Tuple[str, str]) -> None:
     result = extract_teacher_info(teacher_td)
     expected = (
         "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
@@ -124,23 +131,23 @@ def test_extract_teacher_info(teacher_td):
 
 
 @pytest.fixture
-def mazaraki_td():
+def mazaraki_td() -> bs:
     return bs(MAZARAKI, features="html.parser")
 
 
-def test_mazaraki(mazaraki_td):
-    result = extract_teacher_info(mazaraki_td, 1)
+def test_mazaraki(mazaraki_td: bs) -> None:
+    result = extract_teacher_info(mazaraki_td)
     expected = (
-        None,
+        '',
         "/image/ODM1OA==/3a25ff19b7b81ca9c2d7ceec5ff55302.jpg"
     )
     assert result == expected
 
-def test_get_teacher_key():
+def test_get_teacher_key() -> None:
     expected = "доц Котляр В Ю "
     result = get_teacher_key("Котляр В Ю", TIME_TABLE_EXPECTED)
     assert expected == result
-    expected = None
+    expected = ''
     result = get_teacher_key("доц ПУПКИН", TIME_TABLE_EXPECTED)
     assert expected == result
     expected = "проф П'ятницька Г Т "

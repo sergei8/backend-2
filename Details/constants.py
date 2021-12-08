@@ -1,3 +1,6 @@
+from typing import Any, Dict
+
+
 MENU = """<ul>
     <li><a href="/blog/read?n=fmtp&amp;uk"><span class="prev-link">Факультет міжнародної торгівлі та права</span></a>
     </li>
@@ -149,7 +152,7 @@ TIME_TABLE_EXPECTED = {
     }
 }
 
-TIME_TABLE_BEFORE = {
+TIME_TABLE_BEFORE: Dict[str, Dict[str, Any]] = {
     "доц Котляр В Ю ": {
         "Перший тиждень": {},
         "Другий тиждень": {}
