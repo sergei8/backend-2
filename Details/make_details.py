@@ -145,7 +145,7 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     полученный парсингом soup vikl_page
     """
 
-    vikl_page: bytes = requests.get(f"{KNTEU_URL}{vikl_url}").content
+    vikl_page: str = requests.get(f"{KNTEU_URL}{vikl_url}").text
     vikl_soup: bs = bs(vikl_page, features="lxml")
 
     # получить список всех td-тегов из ВСЕХ таблиц на странице
@@ -158,7 +158,7 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     non_standart_td: List[bs] = []
 
     for td_tag in td_tags_list:
-        name, picture_url = extract_teacher_info(td_tag)
+        name, picture_url = _extract_teacher_info(td_tag)
 
         if (name, picture_url) == ('', ''):
             # пустая ячейка - не обрабатываем
@@ -172,9 +172,9 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
 
     # попытка вытащить из нестандартных ячеек реквизиты преподов
     for i in range(len(non_standart_td) - 1):
-        _, picture_url = extract_teacher_info(non_standart_td[i])
+        _, picture_url = _extract_teacher_info(non_standart_td[i])
         # если в ячейке есть `picture_url` то в следующей может быть имя
-        name, _ = extract_teacher_info(non_standart_td[i + 1])
+        name, _ = _extract_teacher_info(non_standart_td[i + 1])
 
         # если вытащили реквизиты, то добавим их в выходной
         if picture_url and name:
@@ -195,7 +195,7 @@ def get_vikl_sklad_href(dep_page: bs) -> Any:
     return a_tags[0].attrs["href"]
 
 
-def extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
+def _extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
     """возвращает из ячейки таблицы имя и линк на фото препода 
     если за 1-ю попытку (attempt=1) не удается, то 2-й попыткой
     добирается инфа из следующей ячейки

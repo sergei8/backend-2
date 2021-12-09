@@ -1,15 +1,19 @@
 from typing import Any, Tuple
-from unittest import mock
+from unittest.mock import  patch, Mock
 import pytest
-# import requests
+# from pytest_mock import patch, Mock
+import requests
+import unittest
+import requests_mock
 
-from bs4 import BeautifulSoup as bs 
+from bs4 import BeautifulSoup as bs  # type: ignore
 
+import make_details
 from make_details import Facultet, Department, Teacher
 from make_details import  \
     make_fac_list, make_dep_list, \
     make_teacher_list, get_vikl_sklad_href, \
-    extract_teacher_info, get_teacher_key
+    _extract_teacher_info, get_teacher_key
 
 from constants import MENU, MENU_1_FAC, DEP_PAGE, \
     TEACHER_PAGE, TEACHER_TD, MAZARAKI, TIME_TABLE_EXPECTED, TIME_TABLE_BEFORE
@@ -80,13 +84,13 @@ def test_get_vikl_sklad_page(dep_page: Any) -> None:
     assert result == expected
 
 
-@pytest.fixture
-def teacher_page() -> bs:
-    return bs(TEACHER_PAGE, features="html.parser")
-
-
-def test_make_teacher_list(teacher_page: bs) -> None:
-
+# патч на метод `get` модуля 'requests'
+@patch.object(requests, 'get')
+def test_make_teacher_list(macked_get_resp: Any) -> None:
+    """ тестирует построитель списка преподов с страницы кафедры 
+    macked_get_resp - патч на 'requests.get'
+    
+    """
     class T(Teacher):
         def __eq__(self, o: object) -> bool:
             if self.first_name == o.first_name and      \
@@ -107,8 +111,15 @@ def test_make_teacher_list(teacher_page: bs) -> None:
         T("ФЕДУН ІГОР ЛЕОНІДОВИЧ", "/file/Mjk1MQ==/a27130a4cf7738a640f5433affd8bd6d.jpg")
     ]
     
-    with mock.patch.object(make_teacher_list, "requests", return_value=b"proba"):
-        result = make_teacher_list(teacher_page)
+    # создать мок респонса 
+    mockresponse = Mock()
+    # записать в него текст тестовой страницы преподов
+    mockresponse.text = TEACHER_PAGE
+    # сказать патчу `requests.get` возвращать созданный мок
+    macked_get_resp.return_value = mockresponse
+    
+    # вызвать тестируемую функцию (аргумент не важен)
+    result = make_teacher_list('')
         
     assert result[0] == expected[0]
     assert result[1] == expected[1]
@@ -116,18 +127,18 @@ def test_make_teacher_list(teacher_page: bs) -> None:
     assert result[3] == expected[3]
 
 
-@pytest.fixture
-def teacher_td() -> bs:
-    return bs(TEACHER_TD, features="html.parser")
+# @pytest.fixture
+# def teacher_td() -> bs:
+#     return bs(TEACHER_TD, features="html.parser")
 
 
-def test_extract_teacher_info(teacher_td: Tuple[str, str]) -> None:
-    result = extract_teacher_info(teacher_td)
-    expected = (
-        "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
-        f"{KNTEU_URL}/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
-    )
-    assert result == expected
+# def _extract_teacher_info_test(teacher_td: Tuple[str, str]) -> None:
+#     result = _extract_teacher_info(teacher_td)
+#     expected = (
+#         "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
+#         f"{KNTEU_URL}/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
+#     )
+#     assert result == expected
 
 
 @pytest.fixture
@@ -136,7 +147,7 @@ def mazaraki_td() -> bs:
 
 
 def test_mazaraki(mazaraki_td: bs) -> None:
-    result = extract_teacher_info(mazaraki_td)
+    result = _extract_teacher_info(mazaraki_td)
     expected = (
         '',
         "/image/ODM1OA==/3a25ff19b7b81ca9c2d7ceec5ff55302.jpg"
