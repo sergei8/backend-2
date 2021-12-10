@@ -1,10 +1,7 @@
 from typing import Any, Tuple
 from unittest.mock import  patch, Mock
 import pytest
-# from pytest_mock import patch, Mock
 import requests
-import unittest
-import requests_mock
 
 from bs4 import BeautifulSoup as bs  # type: ignore
 
@@ -13,10 +10,11 @@ from make_details import Facultet, Department, Teacher
 from make_details import  \
     make_fac_list, make_dep_list, \
     make_teacher_list, get_vikl_sklad_href, \
-    _extract_teacher_info, get_teacher_key
+    _extract_teacher_info, get_teacher_key, _find_teacher_name
 
 from constants import MENU, MENU_1_FAC, DEP_PAGE, \
-    TEACHER_PAGE, TEACHER_TD, MAZARAKI, TIME_TABLE_EXPECTED, TIME_TABLE_BEFORE
+    TEACHER_PAGE, TEACHER_TD, MAZARAKI, TIME_TABLE_EXPECTED, TIME_TABLE_BEFORE, \
+    MULTITABLE_TEACHER_PAGE
 
 from config_app import KNTEU_URL
 
@@ -125,20 +123,32 @@ def test_make_teacher_list(macked_get_resp: Any) -> None:
     assert result[1] == expected[1]
     assert result[2] == expected[2]
     assert result[3] == expected[3]
+    
+    # ТЕСТИРУЕМ МУЛЬТИТАБЛИЧНУЮ СТРАНИЦУ ПРЕПОДОВ
+
+    mockresponse.text = MULTITABLE_TEACHER_PAGE
+    macked_get_resp.return_value = mockresponse
+    result = make_teacher_list('')
 
 
-# @pytest.fixture
-# def teacher_td() -> bs:
-#     return bs(TEACHER_TD, features="html.parser")
+def test_find_teacher_name() -> None:
+    teacher_td_tag = bs(TEACHER_TD, 'html')
+    result = _find_teacher_name(teacher_td_tag)
+    assert result == "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ"
+    
+    
+@pytest.fixture
+def teacher_td() -> bs:
+    return bs(TEACHER_TD, features="html.parser")
 
 
-# def _extract_teacher_info_test(teacher_td: Tuple[str, str]) -> None:
-#     result = _extract_teacher_info(teacher_td)
-#     expected = (
-#         "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
-#         f"{KNTEU_URL}/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
-#     )
-#     assert result == expected
+def test_extract_teacher_info(teacher_td: Tuple[str, str]) -> None:
+    result = _extract_teacher_info(teacher_td)
+    expected = (
+        "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ",
+        "/file/Mjk1MQ==/359babfeb3c26e7a87b9dcb30af37605.jpg"
+    )
+    assert result == expected
 
 
 @pytest.fixture

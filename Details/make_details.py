@@ -213,10 +213,11 @@ def _extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
         # вытягиваем url фотки
         url = img_tag['src']
 
-    # поиск имени в a-теге. если нету, то возвращаем только url фотки
+    # поиск имени в a-теге. если нету, пытаемся найти имя как-то
     tags_a: List[bs] = td_tag.find_all('a')
     if len(tags_a) == 0:
-        return ('', url)
+        _find_teacher_name(tags_a)
+        # return ('', url)
 
     # иначе вытягиваем ФИО
     name = ""
@@ -227,8 +228,22 @@ def _extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
 
     return (name, url)
 
+
+def _find_teacher_name(tag: bs) -> str:
+    """ищет в теге `tag` имя преподавателя из списка в `time-table`"""
+    
+    # фомрируем список всех преподавателей из файла расписания в ніжнем регистре
+    with open(TIME_TABLE_FILE) as f:
+        time_table: List[str] = \
+            [x.lower() for x in sum([re.findall(r"[А-ЯЄІЇ][а-яієї]+", key)
+                for key in json.loads(f.read()).keys()], [])]
+            
+    # ищем фамилию из списка в тэге, если находим то выделяем ФИО препода из тега
+
+    return ''
+
 def get_teacher_key(name_key: str, time_table: Dict[str, Any]) -> str:
-    """возвражает ключ записи препода из `time-table` или none
+    """возвращает ключ записи препода из `time-table` или none
     """
     # поправить апостроф
     mame_key = fix_apostroph(name_key)
