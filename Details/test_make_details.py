@@ -14,7 +14,7 @@ from make_details import  \
 
 from constants import MENU, MENU_1_FAC, DEP_PAGE, \
     TEACHER_PAGE, TEACHER_TD, MAZARAKI, TIME_TABLE_EXPECTED, TIME_TABLE_BEFORE, \
-    MULTITABLE_TEACHER_PAGE
+    MULTITABLE_TEACHER_PAGE, TEACHER_TD_MULTI
 
 from config_app import KNTEU_URL
 
@@ -132,9 +132,9 @@ def test_make_teacher_list(macked_get_resp: Any) -> None:
 
 
 def test_find_teacher_name() -> None:
-    teacher_td_tag = bs(TEACHER_TD, 'html')
+    teacher_td_tag = bs(TEACHER_TD_MULTI, features="html.parser")
     result = _find_teacher_name(teacher_td_tag)
-    assert result == "ОНИЩЕНКО ВОЛОДИМИР ПИЛИПОВИЧ"
+    assert result == "ЧОРНИЙ АНТОН ЮРІЙОВИЧ"
     
     
 @pytest.fixture

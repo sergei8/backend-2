@@ -274,3 +274,10 @@ TIME_TABLE_BEFORE: Dict[str, Dict[str, Any]] = {
     }
 }
 
+TEACHER_TD_MULTI = """
+<td width="50%">
+<p><img alt="" src="../../image/NTk=/e7c7c010c550a1ebc6efde185beac8c1.jpg" style="width: 140px; height: 193px; margin: 10px; float: left;"></p>
+<p><strong>ЧОРНИЙ АНТОН ЮРІЙОВИЧ</strong></p>
+<p>канд. екон. наук, доцент</p>
+</td>
+"""

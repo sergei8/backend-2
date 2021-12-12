@@ -11,7 +11,8 @@ sys.path.insert(0, '.')
 
 #######################
 import json
-from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE
+from config_app import KNTEU_URL, KAFEDRA, FACULTET, SKLAD, TIME_TABLE_FILE, \
+    TEACHER_NAME_PATTERN
 from helpers import clean_string, lat_to_cyr, fix_apostroph, complex_name
 from typing import Any, Dict, List, Tuple, Union, Optional 
 from requests.api import options
@@ -19,6 +20,7 @@ import requests
 from requests import Response
 from bs4 import BeautifulSoup as bs # type: ignore
 import re
+from functools import reduce
 
 NO_PHOTO = "no-photo"
 
@@ -213,17 +215,14 @@ def _extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
         # вытягиваем url фотки
         url = img_tag['src']
 
-    # поиск имени в a-теге. если нету, пытаемся найти имя как-то
+    # поиск имени в a-теге. если нету, пытаемся найти имя как-то иначе
     tags_a: List[bs] = td_tag.find_all('a')
     if len(tags_a) == 0:
-        _find_teacher_name(tags_a)
-        # return ('', url)
+        name = _find_teacher_name(tags_a)
+        return (name, url)
 
-    # иначе вытягиваем ФИО
-    name = ""
-    for tag_a in tags_a:
-        name += tag_a.text
-
+    # вытягиваем ФИО
+    name = reduce(lambda accum, tag_a:  accum+tag_a.text, tags_a, "")  # type: ignore
     name = ' '.join(name.split())
 
     return (name, url)
@@ -234,13 +233,29 @@ def _find_teacher_name(tag: bs) -> str:
     
     # фомрируем список всех преподавателей из файла расписания в ніжнем регистре
     with open(TIME_TABLE_FILE) as f:
-        time_table: List[str] = \
-            [x.lower() for x in sum([re.findall(r"[А-ЯЄІЇ][а-яієї]+", key)
+        teacher_names: List[str] = \
+            [x.lower() for x in sum([re.findall(TEACHER_NAME_PATTERN, key)
                 for key in json.loads(f.read()).keys()], [])]
-            
-    # ищем фамилию из списка в тэге, если находим то выделяем ФИО препода из тега
-
-    return ''
+                
+    # выделить из тэга весь тест в нижнем регистре
+    text_in_tag = tag.text.lower()
+    
+    # строим список фамилий которые есть в тэге
+    names = list(filter(lambda name: name in text_in_tag, teacher_names))
+    
+    # если фамилия из списка есть в теге, значит в этом теге - препод: будем парсить
+    if len(names) > 0:
+        # перевести весь тег в нижний регистр
+        tag_lower: bs = bs(str(tag).lower(), features="html.parser")
+        # 
+        if name := tag_lower.select_one(f'td p span strong:contains({names[0].lower()})'):
+            return name.upper() # type: ignore
+        else:
+            return ''
+    else:
+        return ''
+        
+    
 
 def get_teacher_key(name_key: str, time_table: Dict[str, Any]) -> str:
     """возвращает ключ записи препода из `time-table` или none
