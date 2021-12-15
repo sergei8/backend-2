@@ -7,6 +7,8 @@
 
 # from os import name
 import sys
+
+from requests.sessions import Request
 sys.path.insert(0, '.')
 
 #######################
@@ -48,6 +50,8 @@ class Teacher:
     def __init__(self, name: str, picture_url: str = ''):
         if len(name.split()) != 3:
             # имя не распарсено - забиваем пробелами
+            msg:str = name[:35] if len(name) > 35 else name
+            self.__print_warning(f"{msg} - имя не распарсено")
             self.last_name, self.first_name, self.middle_name = ('', '', '')
         else:
             self.last_name   = name.split(' ')[0].strip().upper()       # Фамілія
@@ -57,7 +61,7 @@ class Teacher:
         # привести линки на фотки к стандартному виду
         if 'data' in picture_url:
             self.picture_url = NO_PHOTO
-            self.__print_warning(f"{name} - img = data")
+            self.__print_warning(f"{name} - img=data")
         elif picture_url == '':
             self.picture_url = NO_PHOTO
             self.__print_warning(f"{name} - нет фотки")
@@ -147,7 +151,10 @@ def make_teacher_list(vikl_url: str) -> List[Teacher]:
     полученный парсингом soup vikl_page
     """
 
-    vikl_page: str = requests.get(f"{KNTEU_URL}{vikl_url}").text
+    r: Response = requests.get(f"{KNTEU_URL}{vikl_url}")
+    if r.encoding != "UTF-8":
+        r.encoding = "UTF-8"
+    vikl_page: str = r.text
     vikl_soup: bs = bs(vikl_page, features="lxml")
 
     # получить список всех td-тегов из ВСЕХ таблиц на странице
@@ -215,15 +222,16 @@ def _extract_teacher_info(td_tag: bs) -> Tuple[str, str]:
         # вытягиваем url фотки
         url = img_tag['src']
 
-    # поиск имени в a-теге. если нету, пытаемся найти имя как-то иначе
+    # поиск а-тега где д/б ФІО.
     tags_a: List[bs] = td_tag.find_all('a')
+    
+    # если нету, пытаемся найти имя как-то иначе
     if len(tags_a) == 0:
-        name = _find_teacher_name(tags_a)
-        return (name, url)
-
-    # вытягиваем ФИО
-    name = reduce(lambda accum, tag_a:  accum+tag_a.text, tags_a, "")  # type: ignore
-    name = ' '.join(name.split())
+        name = _find_teacher_name(td_tag)
+    else:
+        # еслі есть - вытягиваем ФИО
+        name = reduce(lambda accum, tag_a:  accum+(tag_a.text+" "), tags_a, "")  # type: ignore
+        name = ' '.join(name.split())
 
     return (name, url)
 
@@ -237,7 +245,7 @@ def _find_teacher_name(tag: bs) -> str:
             [x.lower() for x in sum([re.findall(TEACHER_NAME_PATTERN, key)
                 for key in json.loads(f.read()).keys()], [])]
                 
-    # выделить из тэга весь тест в нижнем регистре
+    # выделить из тэга весь текст в нижнем регистре
     text_in_tag = tag.text.lower()
     
     # строим список фамилий которые есть в тэге
@@ -247,15 +255,16 @@ def _find_teacher_name(tag: bs) -> str:
     if len(names) > 0:
         # перевести весь тег в нижний регистр
         tag_lower: bs = bs(str(tag).lower(), features="html.parser")
-        # 
-        if name := tag_lower.select_one(f'td p span strong:contains({names[0].lower()})'):
-            return name.upper() # type: ignore
+        # строим список всех тегов, где есть фио препода
+        tags = tag_lower.select(f'*:contains({names[0].lower()})')
+        # последний в списке д/б тег с именем препода
+        if name := tags[-1].text:
+            # возвращаем имя препода в верхнем регистре
+            return ' '.join([x.upper() for x in name.split()])
         else:
             return ''
     else:
-        return ''
-        
-    
+        return ''    
 
 def get_teacher_key(name_key: str, time_table: Dict[str, Any]) -> str:
     """возвращает ключ записи препода из `time-table` или none
@@ -269,7 +278,7 @@ def get_teacher_key(name_key: str, time_table: Dict[str, Any]) -> str:
     for teacher in time_table.keys():
         if name_key in teacher:
             return teacher
-    
+            
     return ''
 
 def main() -> int:
@@ -314,7 +323,7 @@ def main() -> int:
                 print(f"Ошибка чтения страницы кафедры: {dep.name}")
                 continue
 
-            dep_page_bs: bs = bs(dep_page.content, features="lxml")
+            dep_page_bs: bs = bs(dep_page.content, features="html.parser")
 
             # получить ссылку на страницу викладачей
             vikl_url: str = get_vikl_sklad_href(dep_page_bs)
@@ -350,7 +359,7 @@ def main() -> int:
                 
                 # искать ключ записи препода в `time-table`
                 teacher_key = get_teacher_key(name_key, time_table)
-                if teacher_key is not None:
+                if teacher_key != '':
                     # если ключ найден - обновляем поле `details` в `time-table`
                     time_table[teacher_key]["details"] = details
                 else:

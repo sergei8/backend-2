@@ -14,7 +14,8 @@ from make_details import  \
 
 from constants import MENU, MENU_1_FAC, DEP_PAGE, \
     TEACHER_PAGE, TEACHER_TD, MAZARAKI, TIME_TABLE_EXPECTED, TIME_TABLE_BEFORE, \
-    MULTITABLE_TEACHER_PAGE, TEACHER_TD_MULTI
+    MULTITABLE_TEACHER_PAGE, TEACHER_TD_MULTI, TEACHER_TD_MULTI_NONAME, \
+    TEACHER_TD_MULTI_SYMB_N
 
 from config_app import KNTEU_URL
 
@@ -133,6 +134,14 @@ def test_make_teacher_list(macked_get_resp: Any) -> None:
 
 def test_find_teacher_name() -> None:
     teacher_td_tag = bs(TEACHER_TD_MULTI, features="html.parser")
+    result = _find_teacher_name(teacher_td_tag)
+    assert result == "ЧОРНИЙ АНТОН ЮРІЙОВИЧ"
+    
+    teacher_td_tag = bs(TEACHER_TD_MULTI_NONAME, features="html.parser")
+    result = _find_teacher_name(teacher_td_tag)
+    assert result == ""
+    
+    teacher_td_tag = bs(TEACHER_TD_MULTI_SYMB_N, features="html.parser")
     result = _find_teacher_name(teacher_td_tag)
     assert result == "ЧОРНИЙ АНТОН ЮРІЙОВИЧ"
     
