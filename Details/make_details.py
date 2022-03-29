@@ -244,12 +244,9 @@ def _find_teacher_name(tag: bs) -> str:
         teacher_names: List[str] = \
             [x.lower() for x in sum([re.findall(TEACHER_NAME_PATTERN, key)
                 for key in json.loads(f.read()).keys()], [])]
-                
-    # выделить из тэга весь текст в нижнем регистре
-    text_in_tag = tag.text.lower()
-    
-    # строим список фамилий которые есть в тэге
-    names = list(filter(lambda name: name in text_in_tag, teacher_names))
+                    
+    # строим список фамилий в нижнем регистре которые есть в тэге
+    names = list(filter(lambda name: name in tag.text.lower(), teacher_names))
     
     # если фамилия из списка есть в теге, значит в этом теге - препод: будем парсить
     if len(names) > 0:
@@ -366,7 +363,7 @@ def main() -> int:
                     print(f"{name_key}: {fac.name}, {dep.name} - не найден")
 
     # перезаписать `time-table.json`
-    with open('time-table-new.json', 'w') as f:
+    with open('time-table.json', 'w') as f:
         f.write(json.dumps(time_table, indent=2, ensure_ascii=False))
 
     return 0

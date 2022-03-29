@@ -3,12 +3,14 @@
 парсит страницу с расписанием студентов и выбирает href на экселл-файл
 c расписанием
 """
+import os
 import sys
-sys.path.insert(0, '.')
+sys.path.insert(0, os.getcwd())
 
 from config_app import TIME_TABLE_URL, CONFIG_JSON
-from typing import List, Union, Any, Tuple, AnyStr, Dict
+from typing import List, Union, Any, Tuple,AnyStr, Dict
 import requests
+from requests import Response
 from bs4 import BeautifulSoup as bs, StopParsing
 from bs4 import Tag
 from collections import OrderedDict
@@ -17,12 +19,13 @@ import json
 DENNA_FORMA_TABLE_NAME = "ДЕННА ФОРМА\nНАВЧАННЯ"
 
 
-def get_timetable_page(url: str):
+def get_timetable_page(url: str) -> Union[Response, None] :
     """возвращает Respond страницы расписания
     """
     resp = requests.get(url)
 
     return resp if resp.status_code == 200 else None
+
 def get_parsed_timetable(html_page) -> Union[bs, None]:
     """строит и возвращает soup-объект из страницы расписаний
 
@@ -90,7 +93,7 @@ def make_final_json(output: Dict[str, Any], values: list[List[str]]) -> dict[str
     return dict(zip(output, transposed_values))
 
 
-def main():
+def main() -> None:
 
     # читать страницу расписания
     print("\nчитаю url...")
@@ -112,7 +115,7 @@ def main():
 
     # получить списки из тегов таблиц
     list_table_bakalavr: List[Tag] = get_time_table_list(soup_table_bakalavr)
-    list_table_magistr: List[Tag] = get_time_table_list(soup_table_magistr)
+    list_table_magistr:  List[Tag] = get_time_table_list(soup_table_magistr)
 
     # слить 2 списка без первых строк - будет список ссылок на файлы
     list_values: List[Tag] = list_table_bakalavr[1:] + list_table_magistr[1:]

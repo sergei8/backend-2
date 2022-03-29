@@ -3,7 +3,7 @@
 """
 
 TIME_TABLE_URL = "https://knute.edu.ua/blog/read/?pid=1038&uk"
-TIME_TABLE_FILE = "time-table.json"
+TIME_TABLE_FILE = "time-table-2022-2-1.json"
 CONFIG_JSON = "config.json"
 GROUPS_JSON = "groups.json"
 KNTEU_URL = "https://knute.edu.ua"
